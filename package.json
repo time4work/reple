@@ -1,0 +1,24 @@
+{
+  "name": "replecon",
+  "version": "1.0.0",
+  "description": "time 4 Reple 2 do the do",
+  "main": "server.js",
+  "scripts": {
+    "initdb": "node initdb.js",
+    "start": "node server.js"
+  },
+  "author": "sadman",
+  "license": "ISC",
+  "dependencies": {
+    "angular": "^1.6.6",
+    "angular-route": "^1.6.6",
+    "body-parser": "^1.18.1",
+    "ejs": "^2.5.7",
+    "express": "^4.15.4",
+    "express-logging": "^1.1.1",
+    "express-router": "^0.0.1",
+    "logops": "^2.1.0",
+    "mysql": "^2.14.1",
+    "serve-favicon": "^2.4.4"
+  }
+}

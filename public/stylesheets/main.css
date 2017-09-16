@@ -1,0 +1,288 @@
+.jumbotron {
+  background: #532F8C;
+  color: white;
+  padding-bottom: 80px; }
+.jumbotron .btn-primary {
+    background: #845ac7;
+    border-color: #845ac7; }
+.jumbotron .btn-primary:hover {
+      background: #7646c1; }
+.jumbotron p {
+    color: #d9ccee;
+    max-width: 75%;
+    margin: 1em auto 2em; }
+.navbar + .jumbotron {
+    margin-top: -20px; }
+.jumbotron .lang-logo {
+    display: block;
+    border-radius: 50%;
+    overflow: hidden;
+    width: 100px;
+    height: 100px;
+    margin: auto;
+}
+.jumbotron .lang-logo img {
+      max-width: 100%; }
+
+
+.menu-body li{
+    list-style: none;
+    padding-right: 100px;
+    font-size: 18px;
+    text-transform: uppercase;
+    padding-top: 10px;
+    
+}
+.menu-body{
+    display: inline-flex;
+}
+
+.main-menu .col-md-12{
+    background-color: #ccc;
+    border-bottom: 2px solid #000;
+}
+.menu-body li a{
+    color : #000;
+    text-decoration: none;
+}
+.title h1{
+    text-align: center;
+    padding-top: 80px;
+    letter-spacing: 10px;
+}
+.table-body h3 {
+    color: #ccc;
+    text-transform: uppercase;
+    padding: 20px;
+}
+.upload h2{
+    text-align: end;
+    padding-top: 11px;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+        font-size : 18px;
+    color : #ccc;
+}
+.upload input{
+    margin-top: 27px;
+    background-color: #2d5d86;
+    color: #fff;
+    font-size: 15px;
+    padding: 0 15px 0px;
+    letter-spacing: 2px;
+}
+.main-butt input{
+    margin-top: 100px;
+    background-color: #2d5d86;
+    color: #fff;
+    font-size: 15px;
+    padding: 20px 130px 20px;
+    letter-spacing: 2px;
+}
+.main-butt{
+    text-align: center;
+}
+.proj-title{
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 10px;
+    padding-top: 70px;
+}
+.proj-title h3{
+    color : #ccc;
+}
+.name-input span{
+    font-size: 24px;
+    text-transform: uppercase;
+    padding-right: 75px;
+    letter-spacing: 5px;
+    color : #9a9696;
+}
+.name-input input{
+    font-size: 17px;
+}
+.tag-input span{
+    font-size: 24px;
+    text-transform: uppercase;
+    padding-right: 75px;
+    letter-spacing: 5px;
+    color : #9a9696;
+}
+.tag-input input{
+    font-size: 17px;
+}
+.tag-input{
+    padding-left: 60px;
+}
+.input-body{
+    padding-top: 40px;
+}
+#project-page{
+   border-bottom: 1px solid #ccc;
+    padding-bottom: 40px; 
+}
+.main-butt-second input{
+    
+    margin-top: 50px;
+    background-color: #2d5d86;
+    color: #fff;
+    font-size: 15px;
+    padding: 20px 130px 20px;
+    letter-spacing: 2px;
+}
+select {
+    width: 200px;
+    height: 30px;
+}
+.main-butt-second{
+    text-align: center;
+}
+.table-body{
+    width: 50%;
+}
+#table-first{
+    text-align: -webkit-center;
+}
+th{
+    background-color: #ccc;
+    text-transform: uppercase;
+}
+.keys-title h1{
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    padding-top: 50px;
+}
+.input-group{
+    width: 50%;
+}
+.add-input form{
+    text-align: -webkit-center;
+}
+.add-input{
+    padding-top: 40px;
+}
+#keys-page{
+ border-bottom: 1px solid #ccc;
+    padding-bottom: 40px;    
+}
+#table-second{
+    text-align: -webkit-center;
+}
+.number{
+    text-align: center;
+}
+td{
+    text-transform: uppercase;
+}
+.rewrite-title h1{
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+}
+.rewrite-title h3{
+    text-align: center;
+    text-transform: uppercase;
+    color: #ccc;
+    letter-spacing: 5px;
+}
+.rewrite-title{
+    padding-top: 300px;
+}
+.project-input{
+    text-align: center;
+}
+.project-input input{
+    width: 30%;
+}
+.main-butt-third input{
+    margin-top: 25px;
+    background-color: #2d5d86;
+    color: #fff;
+    font-size: 15px;
+    padding: 20px 130px 20px;
+    letter-spacing: 2px;
+}
+.main-butt-third {
+    text-align: -webkit-center;
+}
+.write-title h1{
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+}
+.write-title{
+    padding-top: 50px;
+}
+ .video-main video{
+    width: 70%;
+}
+video{
+    border: 5px solid #ccc;
+}
+.image-galery{
+    padding-top: 20px;
+    text-align: center;
+}
+.image-galery img{
+    width: 14%;
+}
+img[tabindex="0"] {
+  cursor: zoom-in;
+}
+img[tabindex="0"]:focus {
+  position: fixed;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  width: auto;
+  height: auto;
+  max-width: 99%;
+  max-height: 99%;
+  margin: auto;
+  box-shadow: 0 0 20px #000, 0 0 0 1000px rgba(210,210,210,.4);
+}
+img[tabindex="0"]:focus,  / убрать строку, если не нужно, чтобы при клике на увеличенное фото, оно возвращалось в исходное состояние /
+img[tabindex="0"]:focus ~ * {
+  pointer-events: none;
+  cursor: zoom-out;
+}
+.video-main{
+    padding-top: 80px;
+    text-align: center;
+}
+.rewrite-form{
+    padding-top: 80px;
+    font-size: 20px;
+}
+.title-write span{
+    font-size: 20px;
+    text-transform: uppercase;
+    padding-right: 135px;
+    letter-spacing: 5px;
+}
+.add-input-second{
+    padding-left: 215px;
+    padding-top: 80px;
+}
+.add-input-second .input-group{
+    width: 38%;
+}
+.area{
+    padding-top: 70px;
+    padding-left: 160px;
+}
+.main-butt-write input{
+    margin-top: 100px;
+    margin-bottom: 50px;
+    background-color: #2d5d86;
+    color: #fff;
+    font-size: 15px;
+    padding: 20px 130px 20px;
+    letter-spacing: 2px;
+}
+.main-butt-write{
+    text-align: center;
+}

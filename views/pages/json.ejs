@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <% include ../partials/header.ejs %>
+    </head>
+
+    <body np-app="Reple">
+
+        <% include ../partials/nav.ejs %>
+        
+        <section id="jsonpage">
+            <div class="container">
+                <div class="title">
+                    <h1>LOAD JSON</h1>
+                </div>
+                <div class="col-md-12">
+                <form id='json-form'>
+                    <div class="upload">
+                        <div class="col-md-6">
+                            <h2>SELECT FILE</h2>
+                        </div>
+                        <div class="col-md-6">
+                            <input class="button" type="file">
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="main-butt">
+                            <input class="button" type="submit" value="SAVE">
+                        </div>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>
