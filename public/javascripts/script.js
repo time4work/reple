@@ -136,24 +136,20 @@ function rewriteForm(e) {
     if (e.preventDefault) e.preventDefault();
     // console.log(e);
 
-    var x = e.target.getElementsByTagName("input")[0];
     var y = e.target.getElementsByTagName("select")[0];
-    
-    var name = x.value;
     var id = y.options[y.selectedIndex].getAttribute('tag-id');
     
-    // var xhr = new XMLHttpRequest();
-    // var body = 'name=' + encodeURIComponent(name) +
-    // '&tag=' + encodeURIComponent(id);
+    var xhr = new XMLHttpRequest();
+    var body = 'project=' + encodeURIComponent(id);
 
-    // xhr.open("POST", '/projects', true);
-    // xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    // xhr.onreadystatechange = function (){
-    //     console.log(xhr);
-    //     if(xhr.readyState == 4)
-    //         window.location.replace(xhr.responseURL);
-    // };
-    // xhr.send(body);
+    xhr.open("POST", '/rewrite', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function (){
+        console.log(xhr);
+        if(xhr.readyState == 4)
+            window.location.replace(xhr.responseURL);
+    };
+    xhr.send(body);
 
     return false;
 }

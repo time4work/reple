@@ -1,23 +1,25 @@
 #!/usr/bin/env nodejs
 /////////////////////////////////////////////
-const Mysql = require('./module/mysql');
+const mysql = require('mysql2');
 /////////////////////////////////////////////
-var sql 	= new Mysql({});
+const connection 	= mysql.createConnection({
+	host     : process.env.DB_HOST 		|| 'localhost',
+	user     : process.env.DB_USER 		|| 'test',
+	password : process.env.DB_PASSWORD 	|| 'test',
+});
+/////////////////////////////////////////////
 var queries = {
 	'setting': 		'SET foreign_key_checks=0',
 	'database': 	'CREATE DATABASE IF NOT EXISTS  replecon',
-	'video': 		'CREATE TABLE IF NOT EXISTS replecon.video (id INT AUTO_INCREMENT PRIMARY KEY, link VARCHAR(255))ENGINE = InnoDB',
-	// 'thumb':'CREATE TABLE replecon.thumb (id INT AUTO_INCREMENT PRIMARY KEY, link VARCHAR(255), videoID INT(4) NOT NULL, FOREIGN KEY (videoID) REFERENCES replecon.video(id))',
-	'title': 		'CREATE TABLE IF NOT EXISTS replecon.title (id INT AUTO_INCREMENT PRIMARY KEY, text VARCHAR(255))ENGINE = InnoDB',
-	'description': 	'CREATE TABLE IF NOT EXISTS replecon.desc (id INT AUTO_INCREMENT PRIMARY KEY, text VARCHAR(600))ENGINE = InnoDB',
+	'project': 		'CREATE TABLE IF NOT EXISTS replecon.project (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))ENGINE = InnoDB',
 	'tag': 			'CREATE TABLE IF NOT EXISTS replecon.tag (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))ENGINE = InnoDB',
-	'keyword': 		'CREATE TABLE IF NOT EXISTS replecon.keyword (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))ENGINE = InnoDB',
-	'object': 		'CREATE TABLE IF NOT EXISTS replecon.object (id INT AUTO_INCREMENT PRIMARY KEY, videoID INT(4) NOT NULL, descriptionID INT(4) NOT NULL, titleID INT(4) NOT NULL, FOREIGN KEY (videoID) REFERENCES replecon.video(id), FOREIGN KEY (descriptionID) REFERENCES replecon.description(id), FOREIGN KEY (titleID) REFERENCES replecon.title(id))ENGINE = InnoDB',
-	'project': 		'CREATE TABLE IF NOT EXISTS replecon.project (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), tagID INT(4) NOT NULL, FOREIGN KEY (tagID) REFERENCES replecon.tag(id))ENGINE = InnoDB',
-	'relation-tag-object': 		'CREATE TABLE IF NOT EXISTS replecon.relationTagObject (id INT AUTO_INCREMENT PRIMARY KEY, tagID INT(4) NOT NULL,  objectID INT(4) NOT NULL, FOREIGN KEY (tagID) REFERENCES replecon.tag(id), FOREIGN KEY (objectID) REFERENCES replecon.object(id))ENGINE = InnoDB',
-	'relation-keyword-object': 	'CREATE TABLE IF NOT EXISTS replecon.relationKeywordObject (id INT AUTO_INCREMENT PRIMARY KEY, keywordID INT(4) NOT NULL,  objectID INT(4) NOT NULL, FOREIGN KEY (keywordID) REFERENCES replecon.keyword(id), FOREIGN KEY (objectID) REFERENCES replecon.object(id))ENGINE = InnoDB',
-	// 'relation-category-object':'CREATE TABLE replecon.relationTag (id INT AUTO_INCREMENT PRIMARY KEY, categoryID INT(4) NOT NULL,  objectID INT(4) NOT NULL, FOREIGN KEY (categoryID) REFERENCES replecon.category(id), FOREIGN KEY (objectID) REFERENCES replecon.object(id))',
-	'relation-project-object': 	'CREATE TABLE IF NOT EXISTS replecon.relationProjectObject (id INT AUTO_INCREMENT PRIMARY KEY,  objectID INT(4) NOT NULL, projectID INT(4) NOT NULL, FOREIGN KEY (projectID) REFERENCES replecon.project(id), FOREIGN KEY (objectID) REFERENCES replecon.object(id))ENGINE = InnoDB',
+	'original': 	'CREATE TABLE IF NOT EXISTS replecon.original (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), link VARCHAR(255), video VARCHAR(255),  description VARCHAR(600))ENGINE = InnoDB',
+	'object': 		'CREATE TABLE IF NOT EXISTS replecon.object (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, description VARCHAR(600) NOT NULL, originID INT(4) NOT NULL, FOREIGN KEY (originID) REFERENCES replecon.original(id))ENGINE = InnoDB',
+
+	'relation-tag-original': 	'CREATE TABLE IF NOT EXISTS replecon.relationTagOriginal (id INT AUTO_INCREMENT PRIMARY KEY, tagID INT(4) NOT NULL,  originalID INT(4) NOT NULL, FOREIGN KEY (tagID) REFERENCES replecon.tag(id), FOREIGN KEY (originalID) REFERENCES replecon.original(id))ENGINE = InnoDB',
+	'relation-tag-project': 	'CREATE TABLE IF NOT EXISTS replecon.relationTagProject (id INT AUTO_INCREMENT PRIMARY KEY, projectID INT(4) NOT NULL,  tagID INT(4) NOT NULL, positive BOOLEAN NOT NULL , FOREIGN KEY (projectID) REFERENCES replecon.project(id), FOREIGN KEY (tagID) REFERENCES replecon.tag(id))ENGINE = InnoDB',
+	'relation-project-object': 	'CREATE TABLE IF NOT EXISTS replecon.relationProjectObject (id INT AUTO_INCREMENT PRIMARY KEY, projectID INT(4) NOT NULL,  objectID INT(4) NOT NULL, FOREIGN KEY (projectID) REFERENCES replecon.project(id), FOREIGN KEY (objectID) REFERENCES replecon.object(id))ENGINE = InnoDB',
+	// 'relation-keyword-object': 	'CREATE TABLE IF NOT EXISTS replecon.relationKeywordObject (id INT AUTO_INCREMENT PRIMARY KEY, keywordID INT(4) NOT NULL,  objectID INT(4) NOT NULL, FOREIGN KEY (keywordID) REFERENCES replecon.keyword(id), FOREIGN KEY (objectID) REFERENCES replecon.object(id))ENGINE = InnoDB',
 };  
 connection.connect(function(err) {
   if (err) {
@@ -25,18 +27,14 @@ connection.connect(function(err) {
     return;
   }
 });
-Object.keys(queries).map(function(objectKey, index) {
-	console.log(objectKey);
-	var sql = queries[objectKey];
+Object.keys(queries).map(function(key, index) {
+	console.log("]["+key);
+	var sql_queries = queries[key];
 	
-	sql.query(sql, function (err, result) {
+	connection.query(sql_queries, function (err, result) {
 		if (err) throw err;
 	});
 });
 console.log("DB created");
-sql.end();
-// connection.query('SELECT 1 + 1 AS solution', function (error, results, fields) {
-//   if (error) throw error;
-//   console.log('The solution is: ', results[0].solution);
-// });
+connection.end();
 

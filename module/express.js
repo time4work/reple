@@ -31,55 +31,56 @@ module.exports = function(params){
 	});	
 
 	app.get('/', (request, response) => {
-		sql_script = "SELECT * FROM tag";
-		helpers.sqlPull(sql_script, (result) => {
+		query = "SELECT * FROM tag";
+		helpers.sqlPull(query, (result) => {
 			response.render('pages/index',{title : 'Happy ejs', arr : result});
 		});
 	});
 	app.post('/', (request, response) => {
-		sql_script = "INSERT INTO tag(`name`) VALUES('"+request.body.str+"')";
-		helpers.sqlPush(sql_script);
+		query = "INSERT INTO tag(`name`) VALUES('"+request.body.str+"')";
+		helpers.sqlPush(query);
 	});
 
 	app.get('/projects', (request, response) => {
-		sql_script = "SELECT p.id, p.name, t.name as 'tag' FROM project p, tag t where p.tagID = t.id";
-		sql_script2 = "SELECT * FROM tag";
-		helpers.sqlPull(sql_script, (result) => {
-			helpers.sqlPull(sql_script2, (result2) => {
+		// query = "SELECT p.id, p.name, t.name as 'tag' FROM project p, tag t where p.tagID = t.id";
+		query = "SELECT * FROM project";
+		query2 = "SELECT * FROM tag";
+		helpers.sqlPull(query, (result) => {
+			helpers.sqlPull(query2, (result2) => {
 				response.render('pages/project',{object : {projects:result,keywords:result2 }});
 			});
 		});
 	});
 	app.post('/projects', (request, response) => {
-		sql_script = "INSERT INTO project(`name`,`tagID`) VALUES('"+request.body.name+"',"+request.body.tag+")";
-		helpers.sqlPush(sql_script, () => {
+		query = "INSERT INTO project(`name`) VALUES('"+request.body.name+"')";
+		helpers.sqlPush(query, () => {
 			response.redirect('/projects');
 		});		
 	});
 
 	app.get('/tags', (request, response) => {
-		sql_script = "SELECT * FROM tag";
-		helpers.sqlPull(sql_script, (result) => {
+		query = "SELECT * FROM tag";
+		helpers.sqlPull(query, (result) => {
 			response.render('pages/tags',{array : result});
 		});
 	});
 	app.post('/tags', (request, response) => {
-		sql_script = "INSERT INTO tag(`name`) VALUES('"+request.body.name+"')";
-		helpers.sqlPush(sql_script, (result) => {
+		query = "INSERT INTO tag(`name`) VALUES('"+request.body.name+"')";
+		helpers.sqlPush(query, (result) => {
 			response.redirect('/tags');
 		});
 	});
 
 	app.get('/keywords', (request, response) => {
-		sql_script = "SELECT * FROM keyword";
-		helpers.sqlPull(sql_script, (result) => {
+		query = "SELECT * FROM keyword";
+		helpers.sqlPull(query, (result) => {
 			response.render('pages/keywords',{array : result});
 		});	
 	});
 	app.post('/keywords', (request, response) => {
-		sql_script = "INSERT INTO keyword(`name`) VALUES('"+request.body.name+"')";
+		query = "INSERT INTO keyword(`name`) VALUES('"+request.body.name+"')";
 		console.log('new tag name: ' + request.body.name);
-		helpers.sqlPush(sql_script, (result) => {
+		helpers.sqlPush(query, (result) => {
 			response.redirect('/keywords');
 		});
 	});
@@ -88,32 +89,31 @@ module.exports = function(params){
 	app.get('/json', (request, response) => {
 		response.render('pages/json',{title : 'Sad ejs'});
 	});
-	app.post('/json', (request, response) => {
-		// sql_script = "INSERT INTO keyword(`name`) VALUES('"+request.body.name+"')";
-		console.log(request.body);
-		// helpers.sqlPush(sql_script, (result) => {
+	app.post('/json', async (request, response) => {
+		console.log(-2);
+		await helpers.loadJson(JSON.parse(request.body.data), (result) => {
+			console.log('end');
 			response.redirect('/json');
+		});
+		console.log('await end')
+		// helpers.query( JSON.parse(request.body.data), (result) => {
+		// 	response.redirect('/json');
 		// });
 	});
 
 	app.get('/rewrite', (request, response) => {
-		sql_script = "SELECT * FROM project";
-		helpers.sqlPull(sql_script, (result) => {
+		query = "SELECT * FROM project";
+		helpers.sqlPull(query, (result) => {
 			response.render('pages/rewrite',{array : result});
 		});
 	});
 	app.post('/rewrite', (request, response) => {
-		console.log(request.body);
-
-		// sql_script = "INSERT INTO keyword(`name`) VALUES('"+request.body.name+"')";
-		// console.log('new tag name: ' + request.body.name);
-		// sql_script2 = "SELECT * FROM keyword";
-		// sql_script3 = "DELETE FROM `tag` WHERE `id`='"+request.body.id+"';";
-		// helpers.sqlPush(sql_script, (result) => {			
-			response.render('pages/rewriter');
-		// });
+		console.log(request.body);		
+		response.redirect('rewriter');
 	});
-
+	app.get('/rewriter', (request, response) => {
+		response.render('pages/rewriter');
+	});
 
 	// 404, 500
     app.use( (err, req, res, next) => {
