@@ -2,82 +2,135 @@
 <html lang="en">
   <head>
     <% include ../partials/header.ejs %>
+    <link rel="stylesheet" href="http://bootstrap-tagsinput.github.io/bootstrap-tagsinput/dist/bootstrap-tagsinput.css">
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script> -->
+    <script src="http://bootstrap-tagsinput.github.io/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js"></script>
   </head>
   <body>
     <% include ../partials/nav.ejs %>
-    <section id="project-page">
-      <div class="container">
-        <div class="proj-title">
-          <h1>Project</h1>
-          <h3>Add new project</h3>
-        </div>
-        <!-- <form id='project-form' method="POST" action="/projects"> -->
-        <form id='project-form'>
-          <div class="input-body">
-            <div class="col-md-12">
-              <div class="col-md-6">
-                <div class="name-input">
-                  <p><span>select name</span>
-                  <input type="text" name='name'>
-                </p>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="tag-input">
-                <p>
-                  <span>Main tag</span>
-                  <select list="tags" name='tag'>
-                    <% object.keywords.forEach(function(r, iter) { %>
+    <section id="project-details"  class="col-md-offset-2 col-md-10">
+      <div class="col-md-10">
+        <div class="details-body">
 
-                      <option tag-id='<%= r.id %>'> 
-                        <%= r.name %> 
-                      </option>
-
-                    <% }); %>
+          <section>
+            <form id='project-form'>
+              <h1>Project details</h1>
+              <p class="name input">
+                <span class="label-title">Name</span>
+                <input type="text"  id='name-input' value="<%= scope.project.name %>">
+              </p>
+              <p class="info input">
+                <span class="label-title">Info</span>
+                <textarea id="description-textarea"><%= scope.project.description %>
+                </textarea>
+              </p>
+              <div class="tags select assoc">
+                <p class="tags input">
+                  <span class="label-title">Assoc tags</span>
+                  <select multiple id='assoc-tag'>
                   </select>
                 </p>
+                <p >
+                  <select>
+                    <% scope.tags.forEach(function(tag, iter){ %>
+                    <option tag-id='<%= tag.id %>'>
+                      <%= tag.name %>
+                    </option>
+                    <% }); %>
+                  </select>
+                  <button class="btn btn-success add-more" select-id='assoc-tag' type="button"><i class="glyphicon glyphicon-plus"></i> Add</button>
+                </p>
               </div>
-            </div>
-            <div class="col-md-12">
-              <div class="main-butt-second">
-                <input class="button" type="submit" value="SAVE">
+              <div class="tags select stop">
+                <p class="tags input">
+                  <span class="label-title">Stop tags</span>
+                  <select multiple id='stop-tag'>
+                  </select>
+                </p>
+                <p >
+                  <select>
+                    <% scope.tags.forEach(function(tag, iter){ %>
+                    <option tag-id='<%= tag.id %>'>
+                      <%= tag.name %>
+                    </option>
+                    <% }); %>
+                  </select>
+                  <button class="btn btn-success add-more"  select-id='stop-tag' type="button"><i class="glyphicon glyphicon-plus"></i> Add</button>
+                </p>
               </div>
-            </div>
-          </div>
+              <div class="main-butt-forth">
+                <input class="btn btn-danger" value="DELETE">
+                <input class="btn btn-success" type="submit" value="SAVE">
+              </div>
+            </form>
+          </section>
+          <hr>
+          <section>
+            <h1>Project info </h1>
+            <p class="size input">
+              <span class="label-title">Size</span>
+              <input type="text"  id='size-input' value="<%= scope.size %> objects" readonly>
+            </p>
+          </section>
+          <hr>
+          <section>
+            <form>
+              <h1>Data Base</h1>
+              <p class="size input">
+                <span class="label-title">host</span>
+                <input type="text"  id='host-input' value="" >
+              </p>
+              <p class="size input">
+                <span class="label-title">user</span>
+                <input type="text"  id='user-input' value="" >
+              </p>
+              <p class="size input">
+                <span class="label-title">password</span>
+                <input type="text"  id='pass-input' value="" >
+              </p>
+              <p class="size input">
+                <span class="label-title">Name</span>
+                <input type="text"  id='name-input' value="" >
+              </p>
+            </form>
+          </section>
+
         </div>
-      </form>
-    </div>
-  </section>
-  <section id="table-first">
-    <div class="table-body">
-      <h3>Tottal length: <%= object.projects.length %></h3>
-      <table class="table table-bordered">
-        <thead>
-          <tr>
-            <th>№</th>
-            <th>Name</th>
-            <th>Main tag</th>
-            <th>Size</th>
-            <th>Download</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% object.projects.forEach(function(r, iter) { %>
-
-          <tr>
-            <td> <%= iter %> </td>
-            <td> <%= r.name %></td>
-            <td> <%= "tag" %> </td>
-            <td> 0 </td>
-            <td><a href="">Download</a></td>
-            <td><a href=""><i class="fa fa-times" aria-hidden="true"></i></a></td>
-          </tr>
-
-          <% }); %>
-        </tbody>
-      </table>
-    </div>
-  </section>
-</body>
+      </div>
+    </section>
+    <script type="text/javascript">
+    $(function(){
+      $('#stop-tag').tagsinput({
+        allowDuplicates: false,
+        itemValue: 'id',
+        itemText: 'label'
+      });
+      $('#assoc-tag').tagsinput({
+        allowDuplicates: false,
+        itemValue: 'id',
+        itemText: 'label'
+      });
+      $(".bootstrap-tagsinput input").attr("readonly", true);
+      <% scope.relation.forEach(function(tag, iter){ %>
+        <% if (tag.positive == 0) { %>
+          $('#stop-tag').tagsinput('add', {"id":<%= tag.tagID %>, "label": "<%= tag.name %>"} );
+        <% }else{ %>
+          $('#assoc-tag').tagsinput('add', {"id":<%= tag.tagID %>, "label": "<%= tag.name %>"} );
+        <% } %>
+      <% }); %>
+      $('div.tags button.add-more').on('click', (e)=>{
+        console.log('click');
+        var btn = e.target;
+        var neighbour = btn.previousElementSibling;
+        var tag_name = neighbour.options[neighbour.selectedIndex].value;
+        var tag_id = neighbour.options[neighbour.selectedIndex].getAttribute('tag-id');
+        var select_id = btn.getAttribute('select-id');
+        var select = document.getElementById(select_id);
+        var select_name = '#'+select_id;
+        // console.log( {"id":tag_id, "label":tag_name} );
+        $(select_name).tagsinput('add', {"id":tag_id, "label":tag_name} );
+      });
+    });
+    </script>
+  </body>
 </html>

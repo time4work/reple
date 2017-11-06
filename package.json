@@ -4,8 +4,8 @@
   "description": "time 4 Reple 2 do the do",
   "main": "server.js",
   "scripts": {
-    "initdb": "node initdb.js",
-    "start": "node server.js"
+    "db": "node initdb.js",
+    "start": "node app.js"
   },
   "author": "sadman",
   "license": "ISC",
@@ -19,7 +19,9 @@
     "express-router": "^0.0.1",
     "logops": "^2.1.0",
     "mysql": "^2.14.1",
+    "mysql-ssh": "^1.0.6",
     "mysql2": "^1.4.2",
+    "python-shell": "^0.4.0",
     "serve-favicon": "^2.4.4"
   }
 }

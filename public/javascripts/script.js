@@ -2,28 +2,38 @@
 console.log('script');
 ///////////////////////////////////////////////////////////
 window.onload = function() {
-    var proj    = document.getElementById('project-form');
+    // var projs    = document.getElementById('projects-form');
+    // var proj    = document.getElementById('project-form');
+    var newproj    = document.getElementById('new-project-form');
     var tag     = document.getElementById('tag-form');
     var key     = document.getElementById('key-form');
     var json    = document.getElementById('json-form');
     var rewrite = document.getElementById('rewrite-form');
     var rewriter = document.getElementById('rewriter-form');
+    var query = document.getElementById('query-form');
 
-    if(proj) proj.addEventListener("submit", projForm); else
+    // if(projs) projs.addEventListener("submit", projsForm); else
+    if(newproj) newproj.addEventListener("submit", newprojProjForm); else
+    // if(proj) proj.addEventListener("submit", projForm); else
     if(tag) tag.addEventListener("submit", tagForm); else
     if(key) key.addEventListener("submit", keyForm); else
     if(json) json.addEventListener("submit", jsonForm); else
     if(rewrite) rewrite.addEventListener("submit", rewriteForm); else
-    if(rewriter) rewriter.addEventListener("submit", rewriterForm);
+    if(rewriter) rewriter.addEventListener("submit", rewriterForm); else
+    if(query) query.addEventListener("submit", queryForm);
 }
 ///////////////////////////////////////////////////////////
 function projForm(e) {
     if (e.preventDefault) e.preventDefault();
-    // console.log(e);
-    var x = e.target.getElementsByTagName("input")[0];
-    var y = e.target.getElementsByTagName("select")[0];
-    var name = x.value;
-    var id = y.options[y.selectedIndex].getAttribute('tag-id');
+    console.log(e);
+
+    var project_id = e.target.getAttribute('project-id');
+
+    // var input = e.target.getElementsByTagName("input")[0];
+    // var tag_name = input.value;
+
+    var select = e.target.getElementsByTagName("select")[0];
+    var tag_id = select.options[select.selectedIndex].getAttribute('tag-id');
 
     // console.log(x);
     // console.log(y);
@@ -31,21 +41,75 @@ function projForm(e) {
     // console.log(y.options[y.selectedIndex].text);
     // console.log(y.options[y.selectedIndex].getAttribute('tag-id'));
 
-    var body = 'name=' + encodeURIComponent(name) +
-    '&tag=' + encodeURIComponent(id);
+    var body = 'project_id=' + encodeURIComponent(project_id) +
+    '&tag_id=' + encodeURIComponent(tag_id);
     var xhr = new XMLHttpRequest();
 
-    xhr.open("POST", '/projects', true);
+    xhr.open("POST", '/project/'+project_id, true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.onreadystatechange = function (){
-        console.log(xhr);
-        if(xhr.readyState == 4)
-            window.location.replace(xhr.responseURL);
+        console.log(xhr.response);
+    //     if(xhr.readyState == 4)
+    //         window.location.replace(xhr.responseURL);
     };
     xhr.send(body);
 
     return false;
 }
+function newprojProjForm(e) {
+    if (e.preventDefault) e.preventDefault();
+    console.log(e);
+
+    var project_name = document.getElementById('name-input').value;
+    if(!project_name)
+        return false;
+    var project_description = document.getElementById('description-textarea').value;
+    var assoc_tags = $('#assoc-tag').val();
+    var stop_tags = $('#stop-tag').val();
+
+    var data = {};
+    data.name = project_name;
+    if(project_description)
+        data.description = project_description;
+    if(assoc_tags.length || stop_tags.length)
+        data.tags = {assoc:assoc_tags, stop:stop_tags};
+
+    console.log(project_name);    
+    console.log(project_description);    
+    console.log(assoc_tags);    
+    console.log(stop_tags);   
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.open("POST", '/newproject', true);
+    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    xhr.onreadystatechange = function (){
+        console.log(xhr);
+        if(xhr.readyState == 4)
+            window.location.replace(xhr.responseURL);
+    };
+    xhr.send(JSON.stringify(data));
+    return false;
+}
+// function projsForm(e) {
+//     if (e.preventDefault) e.preventDefault();
+//     var x = e.target.getElementsByTagName("input")[0];
+//     var name = x.value;
+
+//     var body = 'name=' + encodeURIComponent(name);
+//     var xhr = new XMLHttpRequest();
+
+//     xhr.open("POST", '/projects', true);
+//     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+//     xhr.onreadystatechange = function (){
+//         console.log(xhr);
+//         if(xhr.readyState == 4)
+//             window.location.replace(xhr.responseURL);
+//     };
+//     xhr.send(body);
+
+//     return false;
+// }
 function tagForm(e) {
     if (e.preventDefault) e.preventDefault();
 
@@ -62,7 +126,6 @@ function tagForm(e) {
             window.location.replace(xhr.responseURL);
     };
     xhr.send(body);
-
     return false;
 }
 function keyForm(e) {
@@ -76,7 +139,7 @@ function keyForm(e) {
     xhr.open("POST", '/keywords', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.onreadystatechange = function (){
-        // console.log(xhr);
+        console.log(xhr);
         if(xhr.readyState == 4)
             window.location.replace(xhr.responseURL);
     };
@@ -94,17 +157,13 @@ function onReaderLoad(e){
 function jsonForm(e) {
     if (e.preventDefault) e.preventDefault();
     // console.log(e);
-
     var file = e.target.getElementsByTagName("input")[0].files[0];
     var reader = new FileReader();
     var xhr = new XMLHttpRequest();
     if (file.type == "application/json" ) {
         reader.readAsText(file);
         reader.onload = (e) => {
-            
-            
                 var body = 'data=' + encodeURIComponent(e.target.result);
-
                 xhr.open("POST", '/json', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onprogress = function (e) {
@@ -124,11 +183,8 @@ function jsonForm(e) {
                     //     window.location.replace(xhr.responseURL);
                 };
                 xhr.send(body); 
-            
         };
     }else console.log('error'); 
-    
-
     return false;
 }
 
@@ -137,7 +193,7 @@ function rewriteForm(e) {
     // console.log(e);
 
     var y = e.target.getElementsByTagName("select")[0];
-    var id = y.options[y.selectedIndex].getAttribute('tag-id');
+    var id = y.options[y.selectedIndex].getAttribute('proj-id');
     
     var xhr = new XMLHttpRequest();
     var body = 'project=' + encodeURIComponent(id);
@@ -152,4 +208,108 @@ function rewriteForm(e) {
     xhr.send(body);
 
     return false;
+}
+
+function rewriterForm(e) {
+    if (e.preventDefault) e.preventDefault();
+    console.log(e);
+
+    var original_id  = document.getElementById('original-id').value;
+    var project_id  = document.getElementById('project-id').value;
+    var description = document.getElementById('object-desc').value;
+    var title       = document.getElementById('object-title').value;
+
+    if(!title || !description || !project_id)
+        return;
+
+    var data = {
+        title: title,
+        description: description,
+        project_id: project_id,
+        original_id: original_id
+    };
+
+    console.log(data);    
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.open("POST", '/rewriter', true);
+    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    xhr.onreadystatechange = function (){
+        console.log(xhr);
+        if(xhr.readyState == 4)
+            window.location.replace(xhr.responseURL);
+    };
+    xhr.send(JSON.stringify(data));
+    return false;
+}
+
+
+function queryForm(e) {
+    if (e.preventDefault) e.preventDefault();
+    console.log(e);
+
+    var ssh_host     = document.getElementById('host-ssh-input').value;
+    var ssh_user     = document.getElementById('user-ssh-input').value;
+    var ssh_password = document.getElementById('password-ssh-input').value;
+    var ssh_port     = document.getElementById('port-ssh-input').value;
+    
+    var db_host     = document.getElementById('host-db-input').value;
+    var db_port     = document.getElementById('port-db-input').value;
+    var db_user     = document.getElementById('user-db-input').value;
+    var db_password = document.getElementById('password-db-input').value;
+    var db_name     = document.getElementById('name-db-input').value;
+    var db_query    = document.getElementById('query-db-textarea').value;
+
+    if(!ssh_host || !ssh_user || !ssh_password || 
+        !db_host || !db_user || !db_password || 
+        !db_query)
+        return;
+
+    var ssh = {
+        'host': ssh_host
+        // ,port: ssh_port
+        ,'user': ssh_user
+        ,'password': ssh_password
+    };
+    if(ssh_port) ssh.port = ssh_port;
+
+    var db = {
+        'host': db_host
+        // ,port: db_port
+        ,'user': db_user
+        ,'password': db_password
+        // ,name: db_name
+        ,'query': db_query
+    };
+    if(db_name) db.name = db_name;
+    if(db_port) db.port = db_port;
+
+    var data = {
+        ssh:ssh
+        ,db:db
+    };
+    // var data = [ssh, db];
+    console.log(data);  
+
+    ajax('/query', data, (result)=>{
+        console.log(result);
+
+        var output = '';
+        for(var i=0; i<result.length; i++){
+            output += JSON.stringify(result[i], null, 4);
+        }
+        $('#response-textarea').val(output);
+    });
+}
+function ajax(url, data, callback){
+    return $.ajax({
+      type: "POST"
+      ,url: url
+      ,data: data
+      ,dataType: 'json'
+      ,success: function(response){
+        callback(response);
+      },
+    });
 }

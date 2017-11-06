@@ -10,13 +10,13 @@
     <section id="rewrite-page">
       <div class="container">
 
-        <form id='rewrite-form' method="POST" action="/rewrite">
+        <form id='rewrite-form'>
           <div class="rewrite-title">
             <h1>Rewriter</h1>
             <h3>Choose project</h3>
             <div class="project-input">
               <p>
-                <select list="tags" name='tag'>
+                <select list="project" name='project'>
                   <% array.forEach(function(r, iter) { %>
 
                   <option proj-id='<%= r.id %>'>

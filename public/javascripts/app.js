@@ -1,5 +1,7 @@
+// const angular = require('angular');
 var app = angular.module('Reple', []);
-app.controller('FormCatchJsonCtrl', function ($scope, $http) {
+// app.controller('testCTRL', function ($scope, $http) {
+app.controller('testCTRL', function ($scope) {
 
     //  var formData = {
     //     firstname: "default",

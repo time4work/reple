@@ -47,7 +47,7 @@
 }
 .title h1{
     text-align: center;
-    padding-top: 80px;
+    /*padding-top: 80px;*/
     letter-spacing: 10px;
 }
 .table-body h3 {
@@ -72,7 +72,7 @@
     letter-spacing: 2px;
 }
 .main-butt input{
-    margin-top: 100px;
+    margin-top: 30px;
     background-color: #2d5d86;
     color: #fff;
     font-size: 15px;
@@ -130,6 +130,9 @@
     padding: 20px 130px 20px;
     letter-spacing: 2px;
 }
+hr {
+    width: 100%;
+}
 select {
     width: 200px;
     height: 30px;
@@ -138,7 +141,7 @@ select {
     text-align: center;
 }
 .table-body{
-    width: 50%;
+    /*width: 50%;*/
 }
 #table-first{
     text-align: -webkit-center;
@@ -163,7 +166,7 @@ th{
     padding-top: 40px;
 }
 #keys-page{
- border-bottom: 1px solid #ccc;
+ /*border-bottom: 1px solid #ccc;*/
     padding-bottom: 40px;    
 }
 #table-second{
@@ -175,10 +178,55 @@ th{
 td{
     text-transform: uppercase;
 }
+#rewrite-second-page label {
+    font-size: 16px;
+    background: cadetblue;
+    padding: 2px 10px;
+    border-radius: 2px;
+    margin-top: 7px;
+    margin-bottom: 0;
+}
+#rewrite-second-page .tags > label {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+#rewrite-second-page .tags > p {
+    border: 1px solid cadetblue;
+}
+#rewriter-submit{
+    margin: auto;
+    display: block;
+    padding: 5px 30px;
+    background: cadetblue;
+    color: white;
+    font-weight: bold;
+    letter-spacing: 3px;
+    margin-bottom: 50px;
+}
+form#rewriter-form{
+    padding-top: 30px;
+}
+.rewriter-form textarea{
+    max-width: 100%;
+    min-width: 100%;
+    width: 100%;
+    min-height: 160px;
+}
 .rewrite-title h1{
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 5px;
+}
+section#rewrite-page,
+section#jsonpage {
+    height: 100vh;
+    width: 100%;
+    display: table;
+}
+section#rewrite-page > div,
+section#jsonpage > div{
+    display: table-cell;
+    vertical-align: middle;
 }
 .rewrite-title h3{
     text-align: center;
@@ -187,7 +235,7 @@ td{
     letter-spacing: 5px;
 }
 .rewrite-title{
-    padding-top: 300px;
+    /*padding-top: 300px;*/
 }
 .project-input{
     text-align: center;
@@ -207,7 +255,7 @@ td{
     text-align: -webkit-center;
 }
 .write-title h1{
-    text-align: center;
+    text-align: left;
     text-transform: uppercase;
     letter-spacing: 5px;
 }
@@ -250,13 +298,13 @@ img[tabindex="0"]:focus ~ * {
   cursor: zoom-out;
 }
 .video-main{
-    padding-top: 80px;
+    /*padding-top: 80px;*/
     text-align: center;
 }
-.rewrite-form{
+/*.rewrite-form{
     padding-top: 80px;
     font-size: 20px;
-}
+}*/
 .title-write span{
     font-size: 20px;
     text-transform: uppercase;
@@ -270,10 +318,10 @@ img[tabindex="0"]:focus ~ * {
 .add-input-second .input-group{
     width: 38%;
 }
-.area{
+/*.area{
     padding-top: 70px;
     padding-left: 160px;
-}
+}*/
 .main-butt-write input{
     margin-top: 100px;
     margin-bottom: 50px;
@@ -285,4 +333,267 @@ img[tabindex="0"]:focus ~ * {
 }
 .main-butt-write{
     text-align: center;
+}
+.menu{
+   position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.menu a summary{
+    line-height: 2;
+    margin: 30px 0px;
+    text-align: center;
+    font-size: 20px;
+    color: #000;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+}
+/*.menu a{
+    text-decoration: none;
+}*/
+/*.menu a:hover{
+    text-decoration: none;
+}*/
+.textarea-block{
+    padding-right: 100px !important;
+}
+.textarea-block,
+.input-block{
+    padding-left: 100px !important;
+}
+.menu-back{
+    z-index: 666;
+    background-color: #ccc;
+    border-right: 2px solid #000;
+    /*position: relative;*/
+    height: 100vh;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+}
+.menu-back {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+}
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+.input-block {
+    max-width: 300px;
+}
+#query-page{
+    margin-left: 200px;
+    /*padding-left: 100px;*/
+}
+#query-page textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 156px;
+    height: 160px;
+    letter-spacing: 3px;
+    word-spacing: 2px;
+    font-family: "Times New Roman", Times, sans-serif;
+    font-size: 20px;
+}
+.details-body section {
+    outline: 1px solid #ff9640; 
+    background: rgba(154, 210, 212, 0.28);
+    padding: 1px 3px;
+    border-radius: 6px;
+}
+section#project-details {
+    text-align: center;
+    margin-left: 200px;
+}
+.main-butt-forth{
+    height: 30px;
+}
+.details-body{
+    width:400px;
+    /*display: inline-block;*/
+    display: table;
+    height: 100vh;
+    margin: 0 auto;
+}
+/*.details-body .select input{
+    height: 100px;
+}*/
+.details-body > form{
+    display: table-cell;
+    vertical-align: middle;
+}
+.find{
+    position: absolute;
+    right: 30px;
+    top: 20px;
+    width: 22px;
+}
+.label-title{
+    position: absolute;
+    left: 0;
+    transform: translateX( calc(-100% - 4px ) );
+    background: #9ad2d4;
+    padding: 2px 10px;
+    border-radius: 20px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-top-left-radius: 3px;
+}
+.details-body select{
+    width: calc(100% - 80px );
+    background: white;
+    padding: 0 20px;
+}
+.details-body button.btn.add-more {
+    width: 80px;
+    float: right;
+    height: 30px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding: 0;
+    text-align: center;
+}
+p.input{
+    position: relative;
+}
+.psearch input{
+    width: 100%;
+    font-size: 20px;
+    padding-right: 30px;
+    padding-left: 20px;
+}
+.table-update tr th:first-child,
+.table-update tr td:first-child {
+    padding-left: 20px;
+}
+.table-body-update{
+    width: 100%;
+}
+.table-update tr {
+    border-bottom: 1px solid #c5c5c5;
+}
+.psearch{
+    text-align: center;
+    position: relative;
+    padding: 13px 20px;
+    background: gainsboro;
+}
+.details-body h1{
+    text-align: center;
+    text-transform: uppercase;
+    margin: 30px;
+}
+.details-body .proj-title{
+    padding-top: 0;
+}
+.details-body form > * {
+    margin: 30px 0;
+}
+p.proj-tags span {
+    border-radius: 5px;
+    padding: 1px 5px;
+    margin: 0px 2px;
+    box-shadow: 0px 1px 3px black;
+}
+p.assoc-tags span{
+    background: #d5f5ff;
+}
+p.stop-tags span{
+    background: #fad7d7;
+}
+.details-body input,
+.details-body textarea{
+    width: 100%;
+    min-width: 100%;
+    max-width: 400px;
+    padding:0 20px;
+    padding: 4px 20px;
+    height: 33px;
+}
+.details-body .main-butt-forth input{
+    width:50%;    
+    min-width: 50%;
+    float: left;
+}
+.details-body textarea{
+    height: 100px;
+}
+.main-butt input{
+    margin:0;
+    border-radius: 5px;
+}
+.details-body h1{
+    font-size: 33px;
+    letter-spacing: 4px;
+}
+.info-input span{
+    text-transform: uppercase;
+    font-size: 18px;
+    padding-right: 41px;
+}
+.textboxlist-ul
+{
+  overflow: hidden;
+  margin: 0;
+  padding: 3px 4px 0;
+  border: 1px solid #999;
+  padding-bottom: 3px;
+}
+.textboxlist-li
+{
+   list-style-type: none;
+   float: left;
+   display: block;
+   padding: 0;
+   margin: 0 5px 3px 0;
+   cursor: default;
+}
+/*.bootstrap-tagsinput input{
+    width: 320px !important;
+}*/
+.details-body span{
+    text-transform: uppercase;
+    font-size: 18px;
+    /*padding-right: 32px;*/
+}
+.bootstrap-tagsinput span.label.tag{
+    font-size: 14px !important;
+    line-height: 2 !important;
+}
+.bootstrap-tagsinput span.label.tag > span{
+    color: red;
+    font-size: 13px;
+}
+.bootstrap-tagsinput{
+    width: 100%;
+    text-align: left;
+}
+.label-info{
+    background-color: #000 !important;
+}
+.main-butt-forth input{
+    padding: 10px;
+    height: auto;
+}
+.main-butt-forth input{
+background-color: #2d5d86;
+color: #fff;
+font-size: 15px;
+/*padding: 20px 100px 20px;*/
+letter-spacing: 2px;
+}
+.table-update p{
+    font-size: 14px;
+    padding-left: 50px;
+}
+.table-update td{
+    font-size: 18px;
+    letter-spacing: 2px;
 }

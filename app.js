@@ -1,4 +1,4 @@
-const sad = require('./module/sadman');
+// const sad = require('./modules/sadman');
 
 // const fs 		= require('fs');
 // const path 		= require('path');
@@ -10,7 +10,7 @@ const sad = require('./module/sadman');
 // const Mysql = require('./module/mysql');
 // const sql = new Mysql({});
 
-const Express = require('./module/express');
+const Express = require('./modules/server');
 const server = new Express({'rootdir':__dirname});
 
 // const router	= require('express-router');
