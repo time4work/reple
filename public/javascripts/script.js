@@ -5,7 +5,7 @@ window.onload = function() {
     // var projs    = document.getElementById('projects-form');
     // var proj    = document.getElementById('project-form');
     var newproj    = document.getElementById('new-project-form');
-    var tag     = document.getElementById('tag-form');
+    var tag     = document.getElementById('tag-info-form');
     var key     = document.getElementById('key-form');
     var json    = document.getElementById('json-form');
     var rewrite = document.getElementById('rewrite-form');
@@ -69,10 +69,15 @@ function newprojProjForm(e) {
 
     var data = {};
     data.name = project_name;
+    
     if(project_description)
         data.description = project_description;
-    if(assoc_tags.length || stop_tags.length)
-        data.tags = {assoc:assoc_tags, stop:stop_tags};
+
+    data.tags = {};
+    if(assoc_tags)
+        data.tags.assoc = assoc_tags;
+    if(stop_tags)
+        data.tags.stop = stop_tags;
 
     console.log(project_name);    
     console.log(project_description);    
@@ -110,15 +115,33 @@ function newprojProjForm(e) {
 
 //     return false;
 // }
-function tagForm(e) {
+function tagForm(e) {    
     if (e.preventDefault) e.preventDefault();
-
+    if ( !confirm("are you sure") )
+        return
+    var name = document.getElementById("name-input");
+    var syns = $('#syns-tag').val()
+    var tag_id = document.getElementById('tag-details').getAttribute('tag-id');
     var x = e.target.getElementsByTagName("input")[0];
     var name = x.value;
-    var body = 'name=' + encodeURIComponent(name);
-    var xhr = new XMLHttpRequest();
+    var data = {name:name, syns:syns, type:'save'};
 
-    xhr.open("POST", '/tags', true);
+    // ajax('/query', data, (result)=>{
+    //     console.log(result);
+
+    //     var output = '';
+    //     for(var i=0; i<result.length; i++){
+    //         output += JSON.stringify(result[i], null, 4);
+    //     }
+    //     $('#response-textarea').val(output);
+    // });
+    // /////////////////////////////////////////////////////////////
+    var body = 'name=' + encodeURIComponent(name)
+        // +"&syns=" + encodeURIComponent(syns)
+        +"&syns=" + syns
+        +'&type=save';
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", '/tag/'+tag_id, true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.onreadystatechange = function (){
         console.log(xhr);
@@ -126,6 +149,8 @@ function tagForm(e) {
             window.location.replace(xhr.responseURL);
     };
     xhr.send(body);
+    // xhr.send(JSON.stringify({name:name, syns:syns, type:'save'}));
+    // xhr.send( JSON.stringify({name:name, syns:syns, type:'save'}) );
     return false;
 }
 function keyForm(e) {
@@ -302,6 +327,44 @@ function queryForm(e) {
         $('#response-textarea').val(output);
     });
 }
+function search(url){
+    // var search = document.getElementById('search');
+    console.log('search engine');
+    if( $('#search') ){
+        $('#search').on('keyup', ()=>{
+            console.log('search typing...');
+
+            var val = $('#search').val();
+
+            if( val.length > 0 ){
+
+                $("#list-tbody").hide();
+
+                ajax(url, {type:'search',name:val}, (tags)=>{
+                    console.log(tags);
+                    var html = '';
+                    for(var i in tags){
+                        console.log(tags[i]);
+                        html += ''
+                        + "<tr>"
+                        + "<td class='number'>" 
+                        + tags[i].id 
+                        + "</td>"
+                        + "<td>"
+                        + tags[i].name
+                        + "</td>"
+                        + "<td><a href=''><i class='fa fa-times' aria-hidden='true'></i></a></td>"
+                        + "</tr>";
+                    }  
+                    $("#search-tbody").empty().append(html).show();        
+                });
+            }else{
+                $("#list-tbody").show();
+                $("#search-tbody").hide();
+            }
+        });
+    }
+}
 function ajax(url, data, callback){
     return $.ajax({
       type: "POST"
@@ -309,7 +372,8 @@ function ajax(url, data, callback){
       ,data: data
       ,dataType: 'json'
       ,success: function(response){
-        callback(response);
+        if(callback)
+            callback(response);
       },
     });
 }

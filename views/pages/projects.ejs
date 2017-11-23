@@ -4,19 +4,21 @@
     <% include ../partials/header.ejs %>
   </head>
   <body>
-    <% include ../partials/nav.ejs %>
-<section id="project-page-update" class="col-md-offset-2 ">
-      <div class="search-body col-md-10">
+
+    <% include ../partials/topnav.ejs %>
+
+    <section id="project-page-update" class="col-md-offset-1 ">
+      <div class="search-body col-md-11">
         <div class="proj-title">
           <h1>Projects</h1>
           <h3>- tag relation -</h3>
         </div>
-        <div class="head-menu">
-          <p>
-            <a href="newproject">Create New Project</a>
-          </p>
-        </div>
           
+        <div class="head-menu">
+          <ul>
+            <li> <a href="newproject">Create New Project</a></li>
+          </ul>
+        </div>
 
 
         <div class="psearch">
@@ -28,47 +30,54 @@
           <table class="table table-update">
             <thead>
               <tr>
-                <th>№</th>
+                <th>id</th>
                 <th></th>
                 <th>Size</th>
               </tr>
             </thead>
-            <tbody>
-            <% scope.forEach(function(proj, iter) { %>
 
-            <tr>
-              <td> <%= iter %> </td>
-              <td> 
-                <a href="/project/<%= proj.id %>"> 
-                  <%= proj.name %>
-                </a>
-                <p class='assoc-tags proj-tags'>
-                  Asoc.tags
-                  <% proj.tags.assoc.forEach(function(tag, i) { %>
-                    <span>
-                    <%= " "+ tag +" "%>
-                    </span>
-                  <% }); %>
-                </p>
-                <p class='stop-tags proj-tags'>
-                  Stop.tags
-                  <% proj.tags.stop.forEach(function(tag, iter) { %>
-                    <span>
-                    <%= " "+ tag +" "%>
-                    </span>
-                  <% }); %>
-                </p>
-              </td>
-              <td> <%= proj.size %> </td>
-            </tr>
+            <tbody id='search-tbody'>
+            </tbody>
 
-          <% }); %>
+            <tbody id='list-tbody'>
+              <% scope.forEach(function(proj, iter) { %>
+              <tr>
+                <td> <%= proj.id %> </td>
+                <td> 
+                  <a href="/project/<%= proj.id %>"> 
+                    <%= proj.name %>
+                  </a>
+                  <p class='assoc-tags proj-tags'>
+                    Asoc.tags
+                    <% proj.tags.assoc.forEach(function(tag, i) { %>
+                      <span>
+                      <%= " "+ tag +" "%>
+                      </span>
+                    <% }); %>
+                  </p>
+                  <p class='stop-tags proj-tags'>
+                    Stop.tags
+                    <% proj.tags.stop.forEach(function(tag, iter) { %>
+                      <span>
+                      <%= " "+ tag +" "%>
+                      </span>
+                    <% }); %>
+                  </p>
+                </td>
+                <td> <%= proj.size %> </td>
+              </tr>
+              <% }); %>
             </tbody>
           </table>
         </div>
       </div>
       
     </section>
-
-
+</body>
+<script>
+  $(function(){
+    search('/projects');
+  });
+</script>
+</html>
  

@@ -1,3 +1,22 @@
+body{
+    min-height: 100vh;
+    padding: 40px 0px;
+}
+input{
+    border-bottom-right-radius: 1px;
+}
+p.input-line label{
+    width: 50px;
+    height: 33px;
+    line-height: 2;
+    margin: 0;
+    padding-left: 5px;
+}
+p.input-line input{
+    width: calc(100% - 50px);
+    min-width: calc(100% - 50px);
+    float: right;
+}
 .jumbotron {
   background: #532F8C;
   color: white;
@@ -23,12 +42,32 @@
 }
 .jumbotron .lang-logo img {
       max-width: 100%; }
-
-
+header#top-nav {
+    text-align: right;
+}
+nav.top-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 4;
+    width: 100%;
+    overflow: hidden;
+    border-bottom: 1px solid silver;
+    background: white;
+}
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.82);
+    z-index: 2;
+    border-top: 1px solid silver;
+}
 .menu-body li{
     list-style: none;
-    padding-right: 100px;
-    font-size: 18px;
+    padding-right: 40px;
+    font-size: 13px;
     text-transform: uppercase;
     padding-top: 10px;
     
@@ -45,6 +84,10 @@
     color : #000;
     text-decoration: none;
 }
+.bottom-nav .menu-body li {
+    font-size: 11px;
+    padding-right: 20px;
+}
 .title h1{
     text-align: center;
     /*padding-top: 80px;*/
@@ -52,8 +95,9 @@
 }
 .table-body h3 {
     color: #ccc;
-    text-transform: uppercase;
-    padding: 20px;
+    /*text-transform: uppercase;*/
+    /*padding: 20px;*/
+    text-align: right;   
 }
 .upload h2{
     text-align: end;
@@ -90,6 +134,10 @@
 }
 .proj-title h3{
     color : #ccc;
+}
+#new-project-form h3{
+    color : #ccc;
+    text-transform: uppercase;
 }
 .name-input span{
     font-size: 24px;
@@ -156,14 +204,11 @@ th{
     letter-spacing: 5px;
     padding-top: 50px;
 }
-.input-group{
-    width: 50%;
-}
 .add-input form{
     text-align: -webkit-center;
 }
 .add-input{
-    padding-top: 40px;
+    padding-bottom: 40px;
 }
 #keys-page{
  /*border-bottom: 1px solid #ccc;*/
@@ -173,7 +218,7 @@ th{
     text-align: -webkit-center;
 }
 .number{
-    text-align: center;
+    text-align: left;
 }
 td{
     text-transform: uppercase;
@@ -212,10 +257,42 @@ form#rewriter-form{
     width: 100%;
     min-height: 160px;
 }
+.upload {
+    text-align: center;
+    margin: 20px 0;
+}
+.upload > div {
+    display: inline-block;
+}
 .rewrite-title h1{
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 5px;
+}
+section#tag-details {
+    padding: 100px;
+    padding-bottom: 300px;
+    background: rgba(255, 255, 255, 0.42);
+}
+.head-menu {
+    display: inline-block;
+    width: 100%;
+}
+.head-menu ul {
+    display: inline-block;
+    position: relative;
+    float: left;
+}
+section#tags-page h1{
+    letter-spacing: 10px;
+    padding-top: 70px;
+    padding-bottom: 70px;
+    color: #ccc;
+    text-align: left;
+}
+section#originals-page h3 {
+    color: #ccc;
+    text-align: right;
 }
 section#rewrite-page,
 section#jsonpage {
@@ -390,7 +467,7 @@ img[tabindex="0"]:focus ~ * {
 }
 #query-page{
     margin-left: 200px;
-    /*padding-left: 100px;*/
+    margin-top: 100px;
 }
 #query-page textarea {
     width: 100%;
@@ -403,14 +480,25 @@ img[tabindex="0"]:focus ~ * {
     font-size: 20px;
 }
 .details-body section {
-    outline: 1px solid #ff9640; 
+    /*outline: 1px solid #ff9640; */
     background: rgba(154, 210, 212, 0.28);
     padding: 1px 3px;
     border-radius: 6px;
 }
+section#originals-page{
+    height: 100%;
+}
+section#originals-top-page h1 {
+    letter-spacing: 10px;
+    padding-top: 70px;
+    padding-bottom: 70px;
+    color: #ccc;
+    text-align: left;
+}
 section#project-details {
     text-align: center;
     margin-left: 200px;
+    /*margin-top: 100px;*/
 }
 .main-butt-forth{
     height: 30px;
@@ -425,15 +513,77 @@ section#project-details {
 /*.details-body .select input{
     height: 100px;
 }*/
+.tag-tmpls li{
+    position: relative;
+}
+.tag-tmpls div.remove {
+    position: absolute;
+    top: 1px;
+    right: 5px;
+    cursor: pointer;
+    color: red;
+}
+.tag-tmpls span {
+    background: lavender;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: lowercase !important;
+}
+.tag-tmpls p {
+    border: 1px solid gainsboro;
+    padding: 2px 5px;
+}
+.tag-tmpls {
+    padding: 0 10px;
+}
+.details-body .block{
+    background: rgba(255, 255, 255, 0.74);
+    /*outline: solid 1px rgb(154, 210, 212);*/
+}
 .details-body > form{
     display: table-cell;
     vertical-align: middle;
+}
+.details-body > .block{
+    display: table-cell;
+    vertical-align: middle;
+    padding: 3px;
 }
 .find{
     position: absolute;
     right: 30px;
     top: 20px;
     width: 22px;
+}
+section.p-console {
+    position: fixed;
+    /*height: 100vh;*/
+    width: 100%;
+    bottom: 40px;
+    left: 0;
+    z-index: 0;
+    outline: none;
+    border: none;
+    background: none;
+    padding: 0;
+}
+option.hasflag {
+    background: #b9b9b9;
+    color: rebeccapurple;
+    font-weight: bold;
+}
+section.p-console ul.output {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+}
+section.p-console input {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border: 1px solid rgba(128, 128, 128, 0.18);
+    background: transparent;
 }
 .label-title{
     position: absolute;
@@ -465,7 +615,8 @@ p.input{
 }
 .psearch input{
     width: 100%;
-    font-size: 20px;
+    font-size: 17px;
+    padding: 5px;
     padding-right: 30px;
     padding-left: 20px;
 }
@@ -513,8 +664,7 @@ p.stop-tags span{
     width: 100%;
     min-width: 100%;
     max-width: 400px;
-    padding:0 20px;
-    padding: 4px 20px;
+    padding: 4px 5px;
     height: 33px;
 }
 .details-body .main-butt-forth input{
@@ -596,4 +746,7 @@ letter-spacing: 2px;
 .table-update td{
     font-size: 18px;
     letter-spacing: 2px;
+}
+.full-width{
+    width: 100%;
 }

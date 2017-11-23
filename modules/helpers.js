@@ -1,4 +1,5 @@
 /////////////////////////////////////////////
+const fs 		= require('fs');
 const MYSQL 	= require('./mysql').connection;
 const MYSQL_SSH	= require('./mysql').sshcon;
 const ASYNSQL 	= require('./mysql').asynccon;
@@ -8,6 +9,22 @@ PythonShell.defaultOptions = {
     scriptPath: './modules/py/',
   	mode: 'text',
     pythonPath: 'python3'
+};
+/////////////////////////////////////////////
+async function myquery(query, params, callback){ // !
+	try {
+		const connection 	= await ASYNSQL(); // !
+		let result = await connection.execute( query, params ); // !
+		connection.end();
+
+		if(callback)
+			await  callback( result, params ); // !
+		return result[0];
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
 };
 /////////////////////////////////////////////
 module.exports.query = async function(query, params, callback){ // !
@@ -44,18 +61,21 @@ module.exports.sshQuery = async function(params, callback){
 module.exports.createProject = async (data, callback) => {
 	try {
 		var query = "INSERT INTO project (`name`, `description`) VALUES (? , ?)";
-		
+		if(!data.description)
+			data.description = '';
 		let result = await myquery(query, [ data.name, data.description ]);
 		
 		if(data.tags)
 		{	
 			var query2 = "INSERT INTO relationTagProject (`tagID`, `projectID`, `positive`) VALUES (?, ?, ?)";
-			for( var i=0; i < data.tags.assoc.length; i++ ){
-				await myquery(query2, [ data.tags.assoc[i], result.insertId, 1 ]);
-			}		
-			for( var i=0; i < data.tags.stop.length; i++ ){
-				await myquery(query2, [ data.tags.stop[i], result.insertId, 0 ]);
-			}
+			if(data.tags.assoc)
+				for( var i=0; i < data.tags.assoc.length; i++ ){
+					await myquery(query2, [ data.tags.assoc[i], result.insertId, 1 ]);
+				}		
+			if(data.tags.stop)
+				for( var i=0; i < data.tags.stop.length; i++ ){
+					await myquery(query2, [ data.tags.stop[i], result.insertId, 0 ]);
+				}
 		}
 		
 		if(callback)
@@ -69,10 +89,338 @@ module.exports.createProject = async (data, callback) => {
 }
 /////////////////////////////////////////////
 
+module.exports.searchProject = async (name, callback) => {
+	try {
+		console.log(name);
+
+		// let query = "SELECT * FROM tag WHERE MATCH(name) AGAINST(?);";
+		let query = "SELECT * FROM project WHERE name like ?";
+		let result = await myquery(query, [ '%'+name+'%' ]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+
+module.exports.searchTag = async (name, callback) => {
+	try {
+		console.log(name);
+
+		// let query = "SELECT * FROM tag WHERE MATCH(name) AGAINST(?);";
+		let query = "SELECT * FROM tag WHERE name like ?";
+		let result = await myquery(query, [ '%'+name+'%' ]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.searchTmpl = async (name, callback) => {
+	try {
+		console.log(name);
+
+		// let query = "SELECT * FROM tag WHERE MATCH(name) AGAINST(?);";
+		let query = "SELECT * FROM template WHERE name like ?";
+		let result = await myquery(query, [ '%'+name+'%' ]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+
 module.exports.createTag = async (name, callback) => {
 	try {
-		let query = "INSERT INTO tag(`name`) VALUES('?')";
+		console.log(name);
+		let query = "INSERT INTO tag(`name`) VALUES(?)";
 		let result = await myquery(query, [ name ]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.createTmpl = async (name, callback) => {
+	try {
+		console.log(name);
+		let query = "INSERT INTO template(`name`) VALUES(?)";
+		let result = await myquery(query, [ name ]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+
+module.exports.setProjectTags = async (tagID,projID,positive, callback) => {
+	try {
+		console.log(name);
+		var query = "INSERT INTO relationTagProject (`tagID`, `projectID`, `positive`) VALUES (?, ?, ?);";
+		let result = await myquery(query, [ name ]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.saveTagChanges = async (tagID, name, newsyns, callback) => {
+	try {
+		await tagNameCheck(tagID, name, async (res)=>{
+			if(!res)
+				await tagNameUpdate(tagID, name);
+		});
+		await selectTagSyns(tagID, async (arr)=>{
+			var newTag = [];
+			var lostTag = [];
+			for(var i=0;i<newsyns.length; i++){
+			    if( arr.indexOf(newsyns[i]) < 0 )
+			        newTag.push(newsyns[i])
+			}
+			for(var i=0;i<arr.length; i++){
+			    if( newsyns.indexOf(arr[i]) < 0 )
+			    	if(arr[i] != tagID)
+			        	lostTag.push(arr[i])
+			}
+			var flag;
+			selectTagFlag(tagID, async (_flag)=>{
+				console.log("flag:"+_flag.flag);
+				flag = _flag.flag
+				if(flag == null)
+					await createTagFlag(tagID, async (newflag)=>{
+						flag = newflag.flag;
+					});
+				await saveTagSyns({new:newTag,lost:lostTag},flag);
+			});
+		});
+
+		if(callback)
+			await callback();
+		// return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+
+}
+async function tagNameCheck(tagID,name,callback){
+	try {
+		let query = 'SELECT name FROM replecon.tag WHERE id = ?';
+		let result = await myquery( query, [tagID] );
+		
+		console.log(result);
+		var resp = result.name == name;
+		if(callback)
+			await callback(resp);
+		return resp;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function tagNameUpdate(tagID,name,callback){
+	try {
+		console.log(" - tagNameUpdate");
+		let query = 'UPDATE replecon.tag SET name = ? WHERE id = ?';
+		let result = await myquery( query, [name,tagID] );
+		console.log(result);
+
+		if(callback)
+			await callback(result[0]);
+		return result[0];
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function saveTagSyns(obj, flag, callback){
+	try {
+		var newTag = obj.new;
+		var lostTag = obj.lost;
+		console.log(" - saveTagSyns");
+		console.log(flag);
+		console.log(newTag);
+		console.log(lostTag);
+
+		for(var i=0; i<newTag.length; i++){
+			let query = 'UPDATE replecon.tag SET flag = ? WHERE id = ?';
+			let result = await myquery( query, [flag, newTag[i]] );
+			console.log(result);
+		}
+		for(var i=0; i<lostTag.length; i++){
+			let query = 'UPDATE replecon.tag SET flag = null WHERE id = ?';
+			let result = await myquery( query, [lostTag[i]] );
+			console.log(result);
+		}
+
+		if(callback)
+			await callback();
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function selectTagSyns(tagID,callback){
+	try {
+		let query = ""	
+			+ " select r.id "
+			+ " from replecon.tag r "
+			+ " where r.flag = "
+			+ " ( "
+			+ " 	select flag "
+			+ " 	from replecon.tag "
+			+ " 	where id = ? "
+			+ " ) "
+			+ " GROUP BY r.id ";
+		let result = await myquery( query, [tagID] );
+
+		var arr = [];
+		for(var i=0; i<result.length; i++){
+			arr.push(result[i].id);		
+		}
+		console.log(arr);
+
+		if(callback)
+			await callback(arr);
+		return arr;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.selectFlagTemplates = async (tagID, callback) => {
+	try {
+		var query = ""
+			+ " SELECT *"
+			+ " FROM replecon.tagTemplates"
+			+ " WHERE flag ="
+			+ " ("
+			+ " SELECT flag"
+			+ " FROM replecon.tag"
+			+ " WHERE id = ?"
+			+ " )"
+		let result = await myquery(query, [ tagID ]);
+
+		console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+
+module.exports.createTagTemplate = async (tagID,keyword,val, callback) => {
+	try {
+		var query = "INSERT INTO replecon.tagTemplates (flag, keyword, val) values (? ,?, ?)";
+		var flag = await selectTagFlag(tagID).flag;
+		console.log(flag);
+		if(!flag){				
+			await createTagFlag(tagID);
+			flag = tagID;
+		}
+		let result = await myquery(query, [ flag, keyword, val ]);
+		console.log(result);
+		if(callback)
+			await callback(result[0]);
+		return result[0];
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.deleteTagTemplate = async (tagID,tmplID, callback) => {
+	try {
+		var query = "DELETE FROM tagTemplates WHERE id = ?";
+		var flag = await selectTagFlag(tagID).flag;
+		console.log(flag);
+		// if(!flag){				
+		// 	await createTagFlag(tagID);
+		// 	flag = tagID;
+		// }
+		let result = await myquery(query, [ tmplID ]);
+		console.log(result);
+		if(callback)
+			await callback(result[0]);
+		return result[0];
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function selectTagFlag(tagID, callback){
+	try {
+		let query = 'SELECT flag FROM replecon.tag WHERE id = ?';
+		let result = await myquery( query, [tagID] );
+
+		console.log(result);
+		if(callback)
+			await callback(result[0]);
+		return result[0];
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function createTagFlag(tagID, callback){
+	try {
+		let query = 'UPDATE replecon.tag SET flag = id WHERE id = ?';
+		let result = await myquery( query, [tagID] );
+
+		console.log(result);
+		if(callback)
+			await callback(result[0]);
+		return result[0];
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.selectProject = async (id, callback) => {
+	try {
+		let query = "SELECT * FROM project WHERE id = ?";
+		let result = await myquery(query, [id]);
 
 		if(callback)
 			await callback(result);
@@ -85,9 +433,9 @@ module.exports.createTag = async (name, callback) => {
 }
 /////////////////////////////////////////////
 
-module.exports.selectProject = async (id, callback) => {
+module.exports.selectTag = async (id, callback) => {
 	try {
-		let query = "SELECT * FROM project WHERE id = ?";
+		let query = "SELECT * FROM tag WHERE id = ?";
 		let result = await myquery(query, [id]);
 
 		if(callback)
@@ -105,6 +453,74 @@ module.exports.selectProjectTags = async (id, callback) => {
 	try {		
 		let query = "SELECT t.name, r.tagID, r.positive FROM relationTagProject r, tag t WHERE projectID = ? AND t.id = r.tagID";
 		let result = await myquery(query, [id]);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+
+module.exports.selectTagSyns = async (id, callback) => {
+	try {	
+		let query = ""	
+			+ " select r.id, r.name "
+			+ " from replecon.tag r "
+			+ " where r.flag = "
+			+ " ( "
+			+ " 	select flag "
+			+ " 	from replecon.tag "
+			+ " 	where id = ? "
+			+ " ) "
+			+ " GROUP BY r.id ";
+
+		// let query = ""
+		// 	+ " select r.tagID as `id`, res2.name "
+		// 	+ " from replecon.relationTagSyn r "
+		// 	+ " left join "
+		// 	+ " ( "
+		// 	+	" select * "
+		// 	+	" from  replecon.tag "
+		// 	+ " ) as res2 on r.tagID = res2.id "
+		// 	+ " where r.flag = "
+		// 	+ " ( "
+		// 	+	" select flag "
+		// 	+	" from replecon.relationTagSyn "
+		// 	+	" where tagID = ? "
+		// 	+ " ) " 
+		// 	+ " GROUP BY tagID ";
+		// let query = " select tagID as `id` "
+		// 	+ " from replecon.relationTagSyn "
+		// 	+ " where flag = "
+		// 	// + " where flagID = "
+		// 	+ " ( "
+		// 	+ " select flag "
+		// 	// + " select flagID "
+		// 	+ " from replecon.relationTagSyn "
+		// 	+ " where tagID = ? "
+		// 	+ " ) ;"
+		let result = await myquery(query, [id]);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+
+module.exports.selectOriginalSize = async (callback) => {
+	try {		
+		let query = "SELECT count(*) FROM original";
+		let size = await myquery(query, []);
+		let result = size[0]['count(*)'];
 
 		if(callback)
 			await callback(result);
@@ -199,6 +615,84 @@ module.exports.selectTags = async (callback) => {
 		return 0;
 	}
 }
+module.exports.selectTmpls = async (callback) => {
+	try {
+		let query = "SELECT * FROM template";
+		let result = await myquery(query, []);
+
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.selectNullTags = async (callback) => {
+	try {
+		// let query = "SELECT * FROM tag WHERE flag is null";
+
+		let query = ""
+			+ " select r.id, r.name, r.flag, res.syns"
+			+ " from tag r"
+			+ " left join"
+			+ " ("
+			+ " 	SELECT flag, count(*) as syns"
+			+ " 	FROM tag r2"
+			+ " 	group by flag"
+			+ " ) as res on r.flag = res.flag "
+			+ " where res.syns < 2 OR r.flag is null "
+			+ " order by id";
+		let result = await myquery(query, []);
+
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.selectTagsEx = async (callback) => {
+	try {
+		// let query = ""
+		// 	+ " select r.id, r.name, r.flag, res.size"
+		// 	+ " from tag r"
+		// 	+ " left join"
+		// 	+ " ("
+		// 	+ " 	SELECT flag, count(*) as size"
+		// 	+ " 	FROM tag r2"
+		// 	+ " 	group by flag"
+		// 	+ " ) as res on r.flag = res.flag "
+		// 	+ " order by id";
+		let query = ""
+			+ " select r.id, r.name, r.flag, res.syns, res2.tmpls"
+			+ " from replecon.tag r"
+			+ " left join"
+			+ " ("
+			+ " 	SELECT flag, count(*) as syns"
+			+ " 	FROM replecon.tag r2"
+			+ " 	group by flag"
+			+ " ) as res on r.flag = res.flag" 
+			+ " left join"
+			+ " ("
+			+ " 	SELECT flag, count(*) as tmpls"
+			+ " 	FROM replecon.tag r2"
+			+ " 	group by flag"
+			+ " ) as res2 on r.flag = res2.flag "
+			+ " order by id";
+		let result = await myquery(query, []);
+
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
 module.exports.saveObject = async (data, callback)=>{
 	console.log(' - objectCreate');
 
@@ -238,24 +732,13 @@ module.exports.selectRandomOriginal = async (projectID, callback) => {
 				console.log(tags);
 				console.log(result);
 				result.tags = tags;
+
+				var obj = JSON.parse(fs.readFileSync('./modules/template2.json', 'utf8'));
+				result.description = await templateParse( obj['start'], obj );
+
 				await callback(result);
 			})
 		});
-	} catch (e) {
-		console.log(e);
-		return 0;
-	}
-};
-async function myquery(query, params, callback){ // !
-	try {
-		const connection 	= await ASYNSQL(); // !
-		let result = await connection.execute( query, params ); // !
-		connection.end();
-
-		if(callback)
-			await  callback( result, params ); // !
-		return result[0];
-
 	} catch (e) {
 		console.log(e);
 		return 0;
@@ -268,18 +751,19 @@ async function selectOriginal(connection, originalID, callback){
 		let result = fields[0][0];
 
 		console.log('/__T_H_E_P_L_A_C_E__');
-		console.log(result);
-		await spinText(result.title, async (title)=>{
-			console.log(title);
-			result.title = title;
-			await spinText(result.description, async (description)=>{
-				console.log(description);
-				result.description = description;
-				await callback(result);
-				return result;
-			});
-		});
+		// console.log(result);
+		// await spinText(result.title, async (title)=>{
+		// 	console.log(title);
+		// 	result.title = title;
+		// 	await spinText(result.description, async (description)=>{
+		// 		console.log(description);
+		// 		result.description = description;
+		// 		await callback(result);
+		// 		return result;
+		// 	});
+		// });
 		console.log('\\__T_H_E_P_L_A_C_E__');
+		await callback(result);
 	} catch (e) {
 		console.log(e);
 		return 0;
@@ -388,7 +872,6 @@ module.exports.loadJson = async function(json){ // !
 	for (var iter=0; iter<json.length; iter++) {
 		let item = json[iter];
 		try {
-
 			let ids = await magic(connection,item); // !
 			console.log(ids);
 			await originalRelation(connection,ids); // !
@@ -460,6 +943,9 @@ async function tagsParse(connection, tags){
 	console.log(' - tagsParse');
 	console.log(tags);
 
+	tags = arrayUpperCase(tags);
+	tags = arrayUniq(tags);
+	
 	let tagIds = [];
 	await Promise.all(tags.map( async (tag) => {  // !
 
@@ -467,29 +953,66 @@ async function tagsParse(connection, tags){
 
 		console.log('tag id: '+id);
 
-		await tagIds.push( id );
+		if( !tagIds.includes(id) )
+			await tagIds.push( id );
 		
 		console.log('tags id:');
 		console.log(tagIds);
 	}));
-
 	return tagIds;
 }
 async function magic(connection, item){
 	let tags 			= item.tags.split(/,/g);
-	// let ids 			= {original:[],tags:[]};
 	let ids 			= {};
 
 	ids.tags = await tagsParse(connection, tags);
-	// console.log('tags ids: ' + ids.tags);
 
 	original = await originalCreate(connection, item); // !
-	console.log('original id: '+original.insertId);
+	console.log( 'original id: ' + original.insertId );
 	ids.original = original.insertId;
 
 	return ids;
 }
+function templateParse(e, obj){
+	var regexp = /<\w*>/ig;
 
+	console.log('- e:');
+	console.log(e);
+	console.log('-----');
+
+	if ( Array.isArray(e) ){
+		return templateParse( rand(e), obj );
+	}
+	else{
+		if( /<\w*>/i.test(e) ){
+			var result = '';
+			var last_pos = 0;
+			while ( foo = regexp.exec(e)) {
+				result += e.substring(last_pos,foo.index);
+				
+				var ind = foo[0].replace(/[<>]*/g,'');
+				result += templateParse( obj[ind], obj );
+				last_pos = regexp.lastIndex;
+			}
+			return result;
+		}else{
+			return e;
+		}
+	}
+}
+function arrayUniq(a) {
+   return Array.from(new Set(a));
+}
+function arrayUpperCase(a) {
+	var tmp = [];
+	for(var i=0; i<a.length; i++){
+		tmp.push( a[i].toUpperCase() )
+	}
+	return tmp;
+}
+function rand(items){
+    return items[~~(Math.random() * items.length)];
+}
 /////////////////////////////////////////////
 // module.exports.sqlPush = (query, callback) => {
 // 	var connection 		= new MYSQL();

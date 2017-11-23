@@ -7,7 +7,9 @@
     <script src="http://bootstrap-tagsinput.github.io/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js"></script>
   </head>
   <body>
-    <% include ../partials/nav.ejs %>
+
+    <% include ../partials/topnav.ejs %>
+  
     <section id="project-details"  class="col-md-offset-2 col-md-10">
       <div class="col-md-10">
         <div class="details-body">
@@ -105,12 +107,15 @@
         itemValue: 'id',
         itemText: 'label'
       });
+
       $('#assoc-tag').tagsinput({
         allowDuplicates: false,
         itemValue: 'id',
         itemText: 'label'
       });
+
       $(".bootstrap-tagsinput input").attr("readonly", true);
+
       <% scope.relation.forEach(function(tag, iter){ %>
         <% if (tag.positive == 0) { %>
           $('#stop-tag').tagsinput('add', {"id":<%= tag.tagID %>, "label": "<%= tag.name %>"} );
@@ -118,6 +123,7 @@
           $('#assoc-tag').tagsinput('add', {"id":<%= tag.tagID %>, "label": "<%= tag.name %>"} );
         <% } %>
       <% }); %>
+      
       $('div.tags button.add-more').on('click', (e)=>{
         console.log('click');
         var btn = e.target;

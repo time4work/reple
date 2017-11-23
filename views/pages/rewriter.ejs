@@ -6,9 +6,10 @@
     <script src="http://bootstrap-tagsinput.github.io/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js"></script>
   </head>
   <body np-app="Reple">
-    <% include ../partials/nav.ejs %>
-    
-    <section id="rewrite-second-page" class='col-md-offset-2 col-md-10'>
+  
+    <% include ../partials/topnav.ejs %>
+
+    <section id="rewrite-second-page" >
       <div class="container">
         <div class="write-title">
           <h1>Rewrite</h1>
@@ -19,7 +20,7 @@
       <div class="col-md-12">
 
         <form id='rewriter-form'>
-        <div class="tags">
+        <div class="tags col-md-offset-1 col-md-10">
           <label>Tags</label>
           <p>
             <% object.tags.forEach(function(tag, iter){ %>
@@ -53,9 +54,7 @@
                 <label>Title</label>
                 <input type="text" value='<%= object.title %>' class='form-control' id='object-title'>
                 <label>Description</label>
-                <textarea id='object-desc'>
-                  <%= object.description %>
-                </textarea>              
+                <textarea id='object-desc'><%= object.description %></textarea>
             </div>
           </div>
           <hr>
