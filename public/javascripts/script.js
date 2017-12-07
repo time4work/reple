@@ -3,7 +3,7 @@ console.log('script');
 ///////////////////////////////////////////////////////////
 window.onload = function() {
     // var projs    = document.getElementById('projects-form');
-    // var proj    = document.getElementById('project-form');
+    var proj    = document.getElementById('project-form');
     var newproj    = document.getElementById('new-project-form');
     var tag     = document.getElementById('tag-info-form');
     var key     = document.getElementById('key-form');
@@ -11,15 +11,17 @@ window.onload = function() {
     var rewrite = document.getElementById('rewrite-form');
     var rewriter = document.getElementById('rewriter-form');
     var query = document.getElementById('query-form');
+    var tmpl = document.getElementById('template-form');
 
     // if(projs) projs.addEventListener("submit", projsForm); else
     if(newproj) newproj.addEventListener("submit", newprojProjForm); else
-    // if(proj) proj.addEventListener("submit", projForm); else
+    if(proj) proj.addEventListener("submit", projForm); else
     if(tag) tag.addEventListener("submit", tagForm); else
-    if(key) key.addEventListener("submit", keyForm); else
+    // if(key) key.addEventListener("submit", keyForm); else
     if(json) json.addEventListener("submit", jsonForm); else
     if(rewrite) rewrite.addEventListener("submit", rewriteForm); else
     if(rewriter) rewriter.addEventListener("submit", rewriterForm); else
+    if(tmpl) tmpl.addEventListener("submit", tmplForm); else
     if(query) query.addEventListener("submit", queryForm);
 }
 ///////////////////////////////////////////////////////////
@@ -27,33 +29,68 @@ function projForm(e) {
     if (e.preventDefault) e.preventDefault();
     console.log(e);
 
-    var project_id = e.target.getAttribute('project-id');
+    var project_id = e.target.getAttribute('proj-id');
+    // var select = e.target.getElementsByTagName("select")[0];
+    // var tag_id = select.options[select.selectedIndex].getAttribute('proj-id');
 
-    // var input = e.target.getElementsByTagName("input")[0];
-    // var tag_name = input.value;
+    var name = $('#name-input').val();
+    var info = $('#description-textarea').val();
+    var assocTags = $('#assoc-tag').val();
+    var stopTags = $('#stop-tag').val();
+    var tmpls = $('#tmpls').val();
 
-    var select = e.target.getElementsByTagName("select")[0];
-    var tag_id = select.options[select.selectedIndex].getAttribute('tag-id');
+    if( assocTags )
+        assocTags = assocTags.map((e)=>{ return parseInt(e, 10); });
+    if( stopTags )
+        stopTags = stopTags.map((e)=>{ return parseInt(e, 10); });
+    if( tmpls )
+        tmpls = tmpls.map((e)=>{ return parseInt(e, 10); });
+    var data = {};
+    data.type = 'project.save';
 
-    // console.log(x);
-    // console.log(y);
-    // console.log(y.options[y.selectedIndex]);
-    // console.log(y.options[y.selectedIndex].text);
-    // console.log(y.options[y.selectedIndex].getAttribute('tag-id'));
+    data.name = name;
+    data.info = info;
+    data.assocTags = assocTags;
+    data.stopTags = stopTags;
+    data.tmpls = tmpls;
 
-    var body = 'project_id=' + encodeURIComponent(project_id) +
-    '&tag_id=' + encodeURIComponent(tag_id);
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", '/project/'+project_id, true);
+    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    xhr.onreadystatechange = function (){
+        console.log(xhr);
+        if(xhr.readyState == 4)
+            window.location.replace(xhr.responseURL);
+    };
+    xhr.send(JSON.stringify(data));
+    return false;
+
+}
+function tmplForm (e) {
+    if (e.preventDefault) e.preventDefault();
+    console.log(e);
+
+    var tmpl_name = document.getElementById('name-input').value;
+    var tmpl_id = document.getElementById('id-input').value;
+    if(!tmpl_name || !tmpl_id)
+        return false;
+
+    var data = {};
+    data.name = tmpl_name;
+    data.type = 'saveT';
+
+    console.log(tmpl_name);  
+
     var xhr = new XMLHttpRequest();
 
-    xhr.open("POST", '/project/'+project_id, true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.open("POST", '/template/'+tmpl_id, true);
+    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     xhr.onreadystatechange = function (){
-        console.log(xhr.response);
-    //     if(xhr.readyState == 4)
-    //         window.location.replace(xhr.responseURL);
+        console.log(xhr);
+        if(xhr.readyState == 4)
+            window.location.replace(xhr.responseURL);
     };
-    xhr.send(body);
-
+    xhr.send(JSON.stringify(data));
     return false;
 }
 function newprojProjForm(e) {
@@ -153,25 +190,25 @@ function tagForm(e) {
     // xhr.send( JSON.stringify({name:name, syns:syns, type:'save'}) );
     return false;
 }
-function keyForm(e) {
-    if (e.preventDefault) e.preventDefault();
+// function keyForm(e) {
+//     if (e.preventDefault) e.preventDefault();
 
-    var x = e.target.getElementsByTagName("input")[0];
-    var name = x.value;
-    var body = 'name=' + encodeURIComponent(name);
-    var xhr = new XMLHttpRequest();
+//     var x = e.target.getElementsByTagName("input")[0];
+//     var name = x.value;
+//     var body = 'name=' + encodeURIComponent(name);
+//     var xhr = new XMLHttpRequest();
 
-    xhr.open("POST", '/keywords', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.onreadystatechange = function (){
-        console.log(xhr);
-        if(xhr.readyState == 4)
-            window.location.replace(xhr.responseURL);
-    };
-    xhr.send(body);
+//     xhr.open("POST", '/keywords', true);
+//     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+//     xhr.onreadystatechange = function (){
+//         console.log(xhr);
+//         if(xhr.readyState == 4)
+//             window.location.replace(xhr.responseURL);
+//     };
+//     xhr.send(body);
 
-    return false;
-}
+//     return false;
+// }
 
 
 function onReaderLoad(e){
@@ -327,50 +364,63 @@ function queryForm(e) {
         $('#response-textarea').val(output);
     });
 }
-function search(url){
-    // var search = document.getElementById('search');
-    console.log('search engine');
-    if( $('#search') ){
-        $('#search').on('keyup', ()=>{
-            console.log('search typing...');
+// function search(url){
+//     // var search = document.getElementById('search');
+//     console.log('search engine');
+//     if( $('#search') ){
+//         $('#search').on('keyup', ()=>{
+//             console.log('search typing...');
 
-            var val = $('#search').val();
+//             var val = $('#search').val();
 
-            if( val.length > 0 ){
+//             if( val.length > 0 ){
 
-                $("#list-tbody").hide();
+//                 $("#list-tbody").hide();
 
-                ajax(url, {type:'search',name:val}, (tags)=>{
-                    console.log(tags);
-                    var html = '';
-                    for(var i in tags){
-                        console.log(tags[i]);
-                        html += ''
-                        + "<tr>"
-                        + "<td class='number'>" 
-                        + tags[i].id 
-                        + "</td>"
-                        + "<td>"
-                        + tags[i].name
-                        + "</td>"
-                        + "<td><a href=''><i class='fa fa-times' aria-hidden='true'></i></a></td>"
-                        + "</tr>";
-                    }  
-                    $("#search-tbody").empty().append(html).show();        
-                });
-            }else{
-                $("#list-tbody").show();
-                $("#search-tbody").hide();
-            }
-        });
-    }
-}
+//                 ajax(url, {type:'search',name:val}, (items)=>{
+//                     console.log(items);
+//                     var html = '';
+//                     for(var i in items){
+//                         console.log(items[i]);
+//                         html += ''
+//                         + "<tr>"
+//                         + "<td class='number'>" 
+//                         + items[i].id 
+//                         + "</td>"
+//                         + "<td>"
+//                         + "<a href='"+ url +"/"+ items[i].id  +"'>"
+//                         + items[i].name
+//                         + "</a>"
+//                         + "</td>"
+//                         + "<td></td>"
+//                         + "</tr>";
+//                     }  
+//                     $("#search-tbody").empty().append(html).show();        
+//                 });
+//             }else{
+//                 $("#list-tbody").show();
+//                 $("#search-tbody").hide();
+//             }
+//         });
+//     }
+// }
 function ajax(url, data, callback){
     return $.ajax({
       type: "POST"
       ,url: url
       ,data: data
       ,dataType: 'json'
+      ,success: function(response){
+        if(callback)
+            callback(response);
+      },
+    });
+}
+function ajax2(url, data, callback){
+    return $.ajax({
+      type: "POST"
+      ,url: url
+      ,data: "data="+JSON.stringify(data) 
       ,success: function(response){
         if(callback)
             callback(response);

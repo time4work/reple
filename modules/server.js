@@ -52,26 +52,75 @@ module.exports = function(params){
 					response.send(result);
 				});
 				break;
+			case "add":
+				await helpers.createProject(name, (result) => {
+					response.redirect('/projects');
+				});
+				break;
 			default:
 				console.log("WRONG type: "+request.body.type);
 		}
 	});
 
-	app.get('/newproject', async (request, response) => {
-		await helpers.selectTags((result) => {
-			response.render('pages/newproject',{scope : {tags:result }});
-		});
-	});
-	app.post('/newproject', async (request, response) => {
-		await helpers.createProject(request.body, () => {
-			response.redirect('/projects');
-		});		
-	});
 
-	app.get('/info', async (request, response) => {
-		await helpers.selectOriginalSize((result) => {
-			response.render('pages/info', {scope:{size:result}} );
+	app.get('/project/:id', async (request, response)=>{ 
+		let project_id = request.params.id;
+
+		await helpers.selectProject(project_id, async (result) => {
+			await helpers.selectTags( async (result2) => {
+				await helpers.selectProjectTags(project_id, async (result3) => {
+					await helpers.selectProjectSize(project_id, async (result4) => {
+						await helpers.selectTmpls( async (result5)=>{
+							await helpers.selectProjectTmpls(project_id, async (result6)=>{
+								response.render('pages/project',{ scope : { project:result[0], tags:result2, tagRelation: result3, size: result4, tmpls: result5 , tmplRelation: result6} } );
+							});
+						});
+						
+					});
+				});
+			});
 		});
+	});
+	app.post('/project/:id', async (request, response) => {
+		let project_id = request.params.id;
+
+		switch(request.body.type){
+			case "project.save":
+				console.log("project.save");
+
+				let name = request.body.name;
+				let info = request.body.info;
+				let tmpls = request.body.tmpls;
+				let db = request.body.db;
+				let assoc_tags = request.body.assocTags ? request.body.assocTags : [];
+				let stopTags = request.body.stopTags ? request.body.stopTags : []
+				let tags = {
+					assoc: assoc_tags,
+					stop: stopTags
+				}
+				if(!name)
+					return;
+
+				await helpers.saveProjectChanges(
+					project_id, 
+					name, 
+					info, 
+					tags, 
+					tmpls, 
+					db, 
+					()=>{
+						response.send({result:'saved'});
+					}
+				);
+				break;
+			case "project.delete":
+				console.log("project.delete");
+				break;
+			default:
+				console.log("project.error");
+				console.log(" O O O P S . . . ");
+				response.send({err:'o o o p s'});
+		}
 	});
 
 	app.get('/templates', async (request, response) => {
@@ -100,30 +149,68 @@ module.exports = function(params){
 					response.send("oops");
 			}
 	});
-	// app.get('/newtemplate', async (request, response) => {
-	// 	response.render('pages/newtemplate');
-	// });
 
-	app.get('/template', async (request, response) => {
-		response.render('pages/templatea');
-	});
+	app.get('/template/:id', async (request, response) => {
+		let template_id = request.params.id;
 
-	app.get('/project/:id', async (request, response)=>{ 
-		let project_id = request.params.id;
-
-		await helpers.selectProject(project_id, async (result) => {
+		await helpers.selectTmpl(template_id, async(result)=>{
+			console.log(result);
 			await helpers.selectTags( async (result2) => {
-				await helpers.selectProjectTags(project_id, async (result3) => {
-					await helpers.selectProjectSize(project_id, (result4) => {
-						response.render('pages/project',{ scope : { project:result[0], tags:result2, relation: result3, size: result4 } } );
-					});
+				console.log(result2);
+				await helpers.selectTmplTemplates(template_id, async (result3)=>{
+					response.render('pages/template', {scope: {tmpl: result[0], tags: result2, templates: result3}});
 				});
 			});
+			
 		});
-	}); 
-	app.post('/project/:id', async function(request, response){ // <<<<<<<<<<<<<<<<<<<<<<<
+	});
+	app.post('/template/:id', async function(request, response){ 
+		let tmpl_id = request.params.id;
 
-	}); // <<<<<<<<<<<<<<<<<<<<<<< !!!!!!!!!!
+		switch(request.body.type){
+			case "saveT":
+				console.log("save");
+				let name = request.body.name;
+				if(!name)
+					return;
+				await helpers.saveTmplChanges(tmpl_id, name, ()=>{
+					response.redirect('/template/'+tmpl_id);
+				});
+				break;
+			case "newTTmpl":
+				console.log("newTemplate");
+				let key = request.body.key;
+				if(!key) return
+
+				let val = request.body.val;
+				let assoctags = JSON.parse(request.body.assoctags);
+				let stoptags = JSON.parse(request.body.stoptags);
+				let tags = {assocs: assoctags, stops: stoptags} ;
+				await helpers.createTmplTemplate(tmpl_id, key, val, tags, (result) => {
+					response.send(result);
+				});
+				break;
+			case "delTTmpl":
+				let template_id = request.body.id;
+				if(!template_id)
+					response.send({err:'oops'})
+
+				await helpers.deleteTmplTemplate(template_id, (result) => {
+					response.send(result);
+				});
+				break;
+			case "delTCur":
+				await helpers.deleteTmpl(tmpl_id, (res)=>{
+					console.log(res);
+					response.send("ok");
+					// response.redirect('/templates');
+				});
+				break;
+			default:
+				console.log(" O O O P S . . . ");
+				response.send({err:'o o o p s'});
+		}
+	});
 
 	app.get('/tags', async (request, response) => {
 		await helpers.selectTagsEx((result) => {
@@ -133,7 +220,9 @@ module.exports = function(params){
 	});
 	app.post('/tags', async (request, response) => {
 		let name = request.body.name;
-
+		if(!name)
+			response.send("oops");
+		else
 		switch(request.body.type){
 			case "search":
 				await helpers.searchTag(name, (result) => {
@@ -162,7 +251,6 @@ module.exports = function(params){
 						console.log(result4);
 						response.render('pages/tag',{ scope : { tag:result[0], tags:result2, syns: result3, templates:result4 } } );
 					});
-					// response.render('pages/tag',{ scope : { tag:result[0], tags:result2, relation: result3 } } );
 				});
 			});
 		});
@@ -191,6 +279,8 @@ module.exports = function(params){
 				break;
 			case "delTmpl":
 				let tmpl_id = request.body.id;
+				if(!tmpl_id)
+					response.send({err:'oops'})
 				await helpers.deleteTagTemplate(tag_id, tmpl_id, (result) => {
 					response.send(result);
 				});
@@ -212,6 +302,15 @@ module.exports = function(params){
 		console.log('await end')
 	});
 
+	app.get('/generator', async (request, response) => {
+		await helpers.selectOriginalAllSize( async(result) => {
+			await helpers.selectProjects((result2)=>{
+				response.render('pages/generator', {scope:
+					{size:result, projects:result2}} );
+			});
+		});
+	});
+
 	app.get('/rewrite', async (request, response) => {
 		await helpers.selectProjects( (result) => {
 			response.render('pages/rewrite',{array : result});
@@ -225,23 +324,12 @@ module.exports = function(params){
 	});
 	
 	app.get('/rewriter', async (request, response) => {
-		await helpers.selectRandomOriginal(request.query.project, async (data) => {	
+		let project_id = request.query.project;
+		await helpers.selectRandomOriginal(project_id, async (data) => {	
 			console.log({object: data});
 			response.render('pages/rewriter', {object: data, project:{id:request.query.project}});
 		});
 	});
-	// app.post('/rewriter', async (request, response) => {
-	// 	console.log(request.body);
-	// 	await helpers.saveObject(request.body, async (result)=>{
-	// 		console.log('Object saved');
-	// 		response.status(200);
-
-	// 		let query = await querystring.stringify({
-	// 			project: request.body.project_id
-	// 		});
-	// 		response.redirect('/rewriter?' + query);
-	// 	});
-	// });
 
 	app.get('/query', async (request, response) => {
 		response.render('pages/query');
@@ -271,3 +359,26 @@ module.exports = function(params){
 
 
 
+	// app.post('/rewriter', async (request, response) => {
+	// 	console.log(request.body);
+	// 	await helpers.saveObject(request.body, async (result)=>{
+	// 		console.log('Object saved');
+	// 		response.status(200);
+
+	// 		let query = await querystring.stringify({
+	// 			project: request.body.project_id
+	// 		});
+	// 		response.redirect('/rewriter?' + query);
+	// 	});
+	// });
+
+	// app.get('/newproject', async (request, response) => {
+	// 	await helpers.selectTags((result) => {
+	// 		response.render('pages/newproject',{scope : {tags:result }});
+	// 	});
+	// });
+	// app.post('/newproject', async (request, response) => {
+	// 	await helpers.createProject(request.body, () => {
+	// 		response.redirect('/projects');
+	// 	});		
+	// });

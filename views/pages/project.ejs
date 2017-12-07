@@ -15,7 +15,7 @@
         <div class="details-body">
 
           <section>
-            <form id='project-form'>
+            <form id='project-form' proj-id='<%= scope.project.id %>'>
               <h1>Project details</h1>
               <p class="name input">
                 <span class="label-title">Name</span>
@@ -23,9 +23,14 @@
               </p>
               <p class="info input">
                 <span class="label-title">Info</span>
-                <textarea id="description-textarea"><%= scope.project.description %>
-                </textarea>
+                <textarea id="description-textarea"><%= scope.project.description %></textarea>
               </p>
+              <p class="size input">
+                <span class="label-title">Size</span>
+                <input type="text"  id='size-input' value="<%= scope.size %> objects" readonly>
+              </p>
+
+              <h1>Tag relation</h1>
               <div class="tags select assoc">
                 <p class="tags input">
                   <span class="label-title">Assoc tags</span>
@@ -40,7 +45,7 @@
                     </option>
                     <% }); %>
                   </select>
-                  <button class="btn btn-success add-more" select-id='assoc-tag' type="button"><i class="glyphicon glyphicon-plus"></i> Add</button>
+                  <button class="btn btn-success add-more assoc-tag" select-id='assoc-tag' type="button"><i class="glyphicon glyphicon-plus"></i> Add</button>
                 </p>
               </div>
               <div class="tags select stop">
@@ -49,7 +54,7 @@
                   <select multiple id='stop-tag'>
                   </select>
                 </p>
-                <p >
+                <p>
                   <select>
                     <% scope.tags.forEach(function(tag, iter){ %>
                     <option tag-id='<%= tag.id %>'>
@@ -57,26 +62,29 @@
                     </option>
                     <% }); %>
                   </select>
-                  <button class="btn btn-success add-more"  select-id='stop-tag' type="button"><i class="glyphicon glyphicon-plus"></i> Add</button>
+                  <button class="btn btn-success add-more stop-tag"  select-id='stop-tag' type="button"><i class="glyphicon glyphicon-plus"></i> Add</button>
                 </p>
               </div>
-              <div class="main-butt-forth">
-                <input class="btn btn-danger" value="DELETE">
-                <input class="btn btn-success" type="submit" value="SAVE">
+              <hr>
+              <h1>Template</h1>
+              <div class="tmpls select ">
+                <p class="tmpls input">
+                  <span class="label-title">templates</span>
+                  <select multiple id='tmpls'>
+                  </select>
+                </p>
+                <p >
+                  <select>
+                    <% scope.tmpls.forEach(function(tmpl, iter){ %>
+                    <option tmpl-id='<%= tmpl.id %>'>
+                      <%= tmpl.name %>
+                    </option>
+                    <% }); %>
+                  </select>
+                  <button class="btn btn-success add-more tmpls"  select-id='tmpls' type="button"><i class="glyphicon glyphicon-plus"></i> Add</button>
+                </p>
               </div>
-            </form>
-          </section>
-          <hr>
-          <section>
-            <h1>Project info </h1>
-            <p class="size input">
-              <span class="label-title">Size</span>
-              <input type="text"  id='size-input' value="<%= scope.size %> objects" readonly>
-            </p>
-          </section>
-          <hr>
-          <section>
-            <form>
+
               <h1>Data Base</h1>
               <p class="size input">
                 <span class="label-title">host</span>
@@ -94,8 +102,13 @@
                 <span class="label-title">Name</span>
                 <input type="text"  id='name-input' value="" >
               </p>
+              <div class="main-butt-forth">
+                <input class="btn btn-danger" type="button" value="DELETE">
+                <input class="btn btn-success" type="submit" value="SAVE">
+              </div>
             </form>
           </section>
+          <hr>
 
         </div>
       </div>
@@ -114,27 +127,54 @@
         itemText: 'label'
       });
 
+      $('#tmpls').tagsinput({
+        allowDuplicates: false,
+        itemValue: 'id',
+        itemText: 'label'
+      });
+
       $(".bootstrap-tagsinput input").attr("readonly", true);
 
-      <% scope.relation.forEach(function(tag, iter){ %>
+      <% scope.tagRelation.forEach(function(tag, iter){ %>
         <% if (tag.positive == 0) { %>
           $('#stop-tag').tagsinput('add', {"id":<%= tag.tagID %>, "label": "<%= tag.name %>"} );
         <% }else{ %>
           $('#assoc-tag').tagsinput('add', {"id":<%= tag.tagID %>, "label": "<%= tag.name %>"} );
         <% } %>
       <% }); %>
+
+      <% scope.tmplRelation.forEach(function(tmpl, iter){ %>
+          $('#tmpls').tagsinput('add', {"id":<%= tmpl.id %>, "label": "<%= tmpl.name %>"} );
+      <% }); %>
       
-      $('div.tags button.add-more').on('click', (e)=>{
+      $('div.tags button.add-more.assoc-tag').on('click', (e)=>{
         console.log('click');
         var btn = e.target;
         var neighbour = btn.previousElementSibling;
         var tag_name = neighbour.options[neighbour.selectedIndex].value;
         var tag_id = neighbour.options[neighbour.selectedIndex].getAttribute('tag-id');
-        var select_id = btn.getAttribute('select-id');
-        var select = document.getElementById(select_id);
-        var select_name = '#'+select_id;
+
+        // var select_id = btn.getAttribute('select-id');
+        // var select = document.getElementById(select_id);
+        // var select_name = '#'+select_id;
         // console.log( {"id":tag_id, "label":tag_name} );
-        $(select_name).tagsinput('add', {"id":tag_id, "label":tag_name} );
+        $('#assoc-tag').tagsinput('add', {"id":tag_id, "label":tag_name} );
+      });
+      $('div.tags button.add-more.stop-tag').on('click', (e)=>{
+        console.log('click');
+        var btn = e.target;
+        var neighbour = btn.previousElementSibling;
+        var tag_name = neighbour.options[neighbour.selectedIndex].value;
+        var tag_id = neighbour.options[neighbour.selectedIndex].getAttribute('tag-id');
+        $('#stop-tag').tagsinput('add', {"id":tag_id, "label":tag_name} );
+      });
+      $('div.tmpls button.add-more.tmpls').on('click', (e)=>{
+        console.log('click');
+        var btn = e.target;
+        var neighbour = btn.previousElementSibling;
+        var tag_name = neighbour.options[neighbour.selectedIndex].value;
+        var tag_id = neighbour.options[neighbour.selectedIndex].getAttribute('tmpl-id');
+        $('#tmpls').tagsinput('add', {"id":tag_id, "label":tag_name} );
       });
     });
     </script>

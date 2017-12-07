@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html class="ng-scope" np-app="Reple">
+<head>
+  <% include ../partials/header.ejs %>
+</head>
+<body>
+  <% include ../partials/topnav.ejs %>
+	<section id="originals-top-page" class="col-md-offset-2 col-md-8">
+		<div class="">
+		    <h1>Generator</h1>
+		</div>
+	</section>
+  	<hr>
+	<section id="originals-page" >
+		<div class="col-md-offset-1 col-md-10">
+	    	<h2>Originals</h2>
+			<h3>Data length: <%=scope.size%></h3>
+		</div>
+	</section>
+	<hr>
+	<section id='project-select-wrap'>
+		<div class="col-md-offset-1 col-md-10">
+	    	<h3>Select Project</h3>
+			<select id='project-select' onchange="if (this.selectedIndex) getOriginSize(this, event);">
+				<option></option>
+				<% scope.projects.forEach(function(project, iter){ %>
+					<option project-id='<%= project.id %>'><%= project.name %></option>
+				<% }); %>
+			</select>
+		</div>
+	</section>
+	<hr>
+</body>
+<script>
+    // var select = document.getElementById("project-select");
+    // var id = y.options[y.selectedIndex].getAttribute('proj-id');
+    function getOriginSize(that, event){
+    	console.log(that);
+    	console.log(event);
+    	var id = that.options[that.selectedIndex].getAttribute('project-id');
+    	if(id)
+    		console.log(id);
+    }
+	$(function(){
+
+	});
+</script>
+</html>

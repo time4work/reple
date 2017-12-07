@@ -5,6 +5,16 @@ body{
 input{
     border-bottom-right-radius: 1px;
 }
+p.input-line.txt-cent {
+    margin: 20px 0 -15px 0;
+}
+.tags.select p {
+    text-transform: capitalize;
+}
+.templates_mng {
+    border-left: 2px solid #9ad2d4;
+    padding-left: 4px;
+}
 p.input-line label{
     width: 50px;
     height: 33px;
@@ -16,6 +26,9 @@ p.input-line input{
     width: calc(100% - 50px);
     min-width: calc(100% - 50px);
     float: right;
+}
+p.input-line span {
+    text-transform: capitalize;
 }
 .jumbotron {
   background: #532F8C;
@@ -292,7 +305,7 @@ section#tags-page h1{
 }
 section#originals-page h3 {
     color: #ccc;
-    text-align: right;
+    /*text-align: right;*/
 }
 section#rewrite-page,
 section#jsonpage {
@@ -484,6 +497,25 @@ img[tabindex="0"]:focus ~ * {
     background: rgba(154, 210, 212, 0.28);
     padding: 1px 3px;
     border-radius: 6px;
+}
+.txt-cent{
+    text-align: center;
+}
+p.radio-line {
+    display: flex;
+    justify-content: space-around;
+}
+p.radio-line input {
+    width: 20px;
+    min-width: 20px;
+    max-width: 20px;
+    height: 20px;
+}
+p.radio-line span {
+    text-transform: lowercase;
+}
+p.radio-line span > * {
+    vertical-align: middle;
 }
 section#originals-page{
     height: 100%;
@@ -747,6 +779,18 @@ letter-spacing: 2px;
     font-size: 18px;
     letter-spacing: 2px;
 }
+section#template-details {
+    padding: 0 0 300px 0;
+}
 .full-width{
     width: 100%;
+}
+div.tmpls.select span.tag.label.label-info {
+    width: 100%;
+    display: block;
+    text-align: left;
+    margin: 1px 0;
+}
+div.tmpls.select span.tag.label.label-info > span {
+    float: right;
 }

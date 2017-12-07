@@ -105,7 +105,10 @@
         console.log(el);
         console.log(event);
         var name = prompt('new tag name');
+        if(!name)
+          return;
         console.log("new tag: "+name);
+        
         var body = 'name=' + encodeURIComponent(name)
             +'&type=add';
         var xhr = new XMLHttpRequest();

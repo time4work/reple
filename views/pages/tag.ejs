@@ -4,6 +4,7 @@
 		<% include ../partials/header.ejs %>
 	    <link rel="stylesheet" href="http://bootstrap-tagsinput.github.io/bootstrap-tagsinput/dist/bootstrap-tagsinput.css">
 	    <script src="http://bootstrap-tagsinput.github.io/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js"></script>
+	    <script type="text/javascript" src='/javascripts/tmpl.js'></script>
 	</head>
 	<body>
 
@@ -27,7 +28,7 @@
 						</p>
 						<p class="id input">
 							<span class="label-title">id</span>
-							<input type="text"  id='name-input' value="<%= scope.tag.id %>" readonly>
+							<input type="text"  id='id-input' value="<%= scope.tag.id %>" readonly>
 						</p>
 						<div class="tags select syns">
 							<p class="tags input">
@@ -90,19 +91,10 @@
 <script type="text/javascript">
 	var url = '/tag/'+'<%=scope.tag.id%>';
 	var tmpl_pack = <%-JSON.stringify(scope.templates)%>;
-	var tmpl_arr= tmpl_pack.map((item)=>{
-		var obj = {};
-		obj[item['keyword']] = item['val'];
-		return obj;
-	});
-	var tmpls = {};
-	Array.prototype.forEach.call(tmpl_arr,function(elem) {
-	   var keys = Object.keys(elem);
-	   tmpls[keys[0]] = elem[keys[0]];
-	});
+	var tmpls = parseTmplObj(tmpl_pack);
+
 	function removeTmpl(e){
 		console.log(e);
-		
 		var id = e.getAttribute('tmpl-id');
 		console.log(id);
 		ajax(url, {type:'delTmpl',id:id}, (resp)=>{
@@ -110,60 +102,14 @@
 		});
 		location.reload();
 	}
-
 	function tagSelectFunc() {
 		var selectBox = document.getElementById("syn-tag-select");
-
 		console.log(selectBox);
-
 		if ( selectBox.options[selectBox.selectedIndex].classList.contains('hasflag') )
 			alert("This tag has flag! If you add it to synonym tags, you may rewrite some text templates of this tag.");
 	}
 
-	function templateParse(e, obj){
-		var regexp = /<\w*>/ig;
-
-		li = document.createElement('li');
-		li.appendChild(document.createTextNode(" - element: [ "));
-		li.appendChild(document.createTextNode(e));
-		li.appendChild(document.createTextNode(" ]"));
-		$('section.p-console ul.output').append( li );
-		console.log('- e: '+e);
-
-		if ( Array.isArray(e) ){
-			return templateParse( rand(e), obj );
-		}
-		else{
-			if( /<\w*>/i.test(e) ){
-				var result = '';
-				var last_pos = 0;
-				while ( foo = regexp.exec(e)) {
-					result += e.substring(last_pos,foo.index);
-					
-					var ind = foo[0].replace(/[<>]*/g,'');
-					result += templateParse( obj[ind], obj );
-					last_pos = regexp.lastIndex;
-				}
-				return result;
-			}else{
-				return e;
-			}
-		}
-	}
 	$(function(){
-		var _console = $('section.p-console');
-		if(_console){
-			$('section.p-console input').on('keypress', function(event){
-				console.log(event);
-				if(event.keyCode == 13){
-					var msg = $('section.p-console input').val();
-					$('section.p-console ul.output').append( "<hr>" );
-					var output = templateParse(msg,tmpls);
-					$('section.p-console ul.output').append( "<li>"+output+"</li>" );
-					$('section.p-console ul.output').append( "<hr>" );
-				}
-			});
-		}
 		$('#syns-tag').tagsinput({
 			allowDuplicates: false,
 			itemValue: 'id',
@@ -182,7 +128,6 @@
 	  			$('#syns-tag').tagsinput('add', {"id":<%= syn.id %>, "label": "<%= syn.name %>"} );
 	  		<% } %>
 		<% }); %>
-
 
 		$('div.templates_mng button.add-tmpl').on('click', (e)=>{
 			console.log('click');

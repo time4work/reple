@@ -95,7 +95,10 @@
 	    console.log(el);
 	    console.log(event);
 	    var name = prompt('new template name');
+        if(!name)
+			return;
 	    console.log("new template: "+name);
+	    
 	    var body = 'name=' + encodeURIComponent(name)
 	        +'&type=add';
 	    var xhr = new XMLHttpRequest();

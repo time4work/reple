@@ -58,26 +58,11 @@ module.exports.sshQuery = async function(params, callback){
 	}
 }
 /////////////////////////////////////////////
-module.exports.createProject = async (data, callback) => {
+module.exports.createProject = async (name, callback) => {
 	try {
-		var query = "INSERT INTO project (`name`, `description`) VALUES (? , ?)";
-		if(!data.description)
-			data.description = '';
-		let result = await myquery(query, [ data.name, data.description ]);
-		
-		if(data.tags)
-		{	
-			var query2 = "INSERT INTO relationTagProject (`tagID`, `projectID`, `positive`) VALUES (?, ?, ?)";
-			if(data.tags.assoc)
-				for( var i=0; i < data.tags.assoc.length; i++ ){
-					await myquery(query2, [ data.tags.assoc[i], result.insertId, 1 ]);
-				}		
-			if(data.tags.stop)
-				for( var i=0; i < data.tags.stop.length; i++ ){
-					await myquery(query2, [ data.tags.stop[i], result.insertId, 0 ]);
-				}
-		}
-		
+		var query = "INSERT INTO project (`name`) VALUES (?)";
+		let result = await myquery(query, [ name ]);
+
 		if(callback)
 			await callback(result);
 		return result;
@@ -198,6 +183,202 @@ module.exports.setProjectTags = async (tagID,projID,positive, callback) => {
 	}
 }
 /////////////////////////////////////////////
+module.exports.saveProjectChanges = async (id, name, info, tags, tmpls, db, callback) => {
+	try {
+		console.log({name, info, tags, tmpls, db, callback});
+		if(!name )
+			return
+		let query;
+		///////////////////////////////////////////
+				console.log("< base_save >");
+				query = "UPDATE project "
+					+	"SET name=?, description=? "
+					+	"WHERE id=?;";
+				let base_save = await myquery(query, [ name, info, id ]);
+				console.log(base_save);
+	///////////////////////////////////////////
+	console.log("< project_tags >");
+	query = "select r.id, res.id as `tagID`, r.positive from relationTagProject r left join (select id, name from tag) as res on res.id = r.tagID where r.projectID = ? order by res.id";
+	let p_t = await myquery(query, [ id ]);
+	console.log(p_t);
+
+	var p_t_a = [],
+		p_t_s = [];
+
+	for(var i=0; i<p_t.length; i++){
+		if(p_t[i].positive == 1)
+			await p_t_a.push(p_t[i].tagID);
+		else 
+			await p_t_s.push(p_t[i].tagID);
+	}
+	console.log("< p_t_a >");
+	console.log(p_t_a);
+	console.log("< p_t_s >");
+	console.log(p_t_s);
+	///////////////////////////////////////////
+		var new_p_t_a = [];
+		var lost_p_t_a = [];
+
+		for(var i=0;i<tags.assoc.length; i++){
+		    if( p_t_a.indexOf(tags.assoc[i]) < 0 )
+		        await new_p_t_a.push(tags.assoc[i]);
+		}
+		for(var i=0;i<p_t_a.length; i++){
+		    if( tags.assoc.indexOf(p_t_a[i]) < 0 )
+	        	await lost_p_t_a.push(p_t_a[i]);
+		}
+		console.log("< new_p_t_a >");
+		console.log(new_p_t_a);
+		console.log("< lost_p_t_a >");
+		console.log(lost_p_t_a);
+		///////////////////////////////////////////
+			var new_p_t_s = [];
+			var lost_p_t_s = [];
+
+			for(var i=0;i<tags.stop.length; i++){
+			    if( p_t_s.indexOf(tags.stop[i]) < 0 )
+			        await new_p_t_s.push(tags.stop[i]);
+			}
+			for(var i=0;i<p_t_s.length; i++){
+			    if( tags.stop.indexOf(p_t_s[i]) < 0 )
+		        	await lost_p_t_s.push(p_t_s[i]);
+			}
+			console.log("< new_p_t_s >");
+			console.log(new_p_t_s);
+			console.log("< lost_p_t_s >");
+			console.log(lost_p_t_s);
+
+
+			console.log("< tag_res >");
+			query = 'insert into '
+				+	'relationTagProject(tagID, projectID, positive) '
+				+	'values(?,?,?)';
+			// for(var a_t in new_p_t_a){
+			// 	console.log(a_t);
+			// 	positive = 1;
+			// 	let tag_res = await myquery(query, [ a_t, id, positive ]);
+			// 	console.log(tag_res);
+			// }
+			for(var i=0; i<new_p_t_a.length;i++){
+				console.log(new_p_t_a[i]);
+				positive = 1;
+				let tag_res = await myquery(query, [ new_p_t_a[i], id, positive ]);
+				console.log(tag_res);
+			}
+			for(var i=0; i<new_p_t_s.length;i++){
+				console.log(new_p_t_s[i]);
+				positive = 0;
+				let tag_res = await myquery(query, [ new_p_t_s[i], id, positive ]);
+				console.log(tag_res);
+			}
+			query = 'DELETE FROM relationTagProject '
+				+	'WHERE tagID = ? '
+				+	'and projectID = ? '
+				+	'and positive = ? ';
+			for(var i=0; i<lost_p_t_a.length;i++){
+				console.log(lost_p_t_a[i]);
+				positive = 1;
+				let tag_res = await myquery(query, [ lost_p_t_a[i], id, positive ]);
+				console.log(tag_res);
+			}
+			for(var i=0; i<lost_p_t_s.length;i++){
+				console.log(lost_p_t_s[i]);
+				positive = 0;
+				let tag_res = await myquery(query, [ lost_p_t_s[i], id, positive ]);
+				console.log(tag_res);
+			}
+		///////////////////////////////////////////
+		console.log('< p_tmpls_res >');
+		// query = "select r.id, res.id as `tmplID` "
+		// 	+	"from relationTmplProject r "
+		// 	+	"left join "
+		// 	+	"(select id, name from template) "
+		// 	+	"as res on res.id = r.tmplID "
+		// 	+	"where r.projectID = ? "
+		// 	+	"order by res.id";
+		query = "select tmplID "
+			+	"from relationTmplProject "
+			+	"where projectID = ? "
+		let p_tmpls_res = await myquery(query, [ id ]);
+		console.log(p_tmpls_res);
+
+		var p_tmpls = [];
+		for(var i=0; i<p_tmpls_res.length;i++){
+			await p_tmpls.push(p_tmpls_res[i].tmplID);
+		}
+
+		var new_tmpls = [];
+		var lost_tmpls = [];
+
+		if(!tmpls)
+			tmpls = [];
+
+		for(var i=0;i<tmpls.length; i++){
+		    if( p_tmpls.indexOf(tmpls[i]) < 0 )
+		        await new_tmpls.push(tmpls[i])
+		}
+		for(var i=0;i<p_tmpls.length; i++){
+		    if( tmpls.indexOf(p_t_a[i]) < 0 )
+	        	await lost_tmpls.push(p_tmpls[i])
+		}
+		console.log('< new_tmpls >');
+		console.log(new_tmpls);
+		console.log('< lost_tmpls >');
+		console.log(lost_tmpls);
+
+		console.log('< tmpl_res >');
+		query = 'insert into '
+			+	'relationTmplProject(tmplID, projectID) '
+			+	'values(?,?)';
+		for(var i=0; i<new_tmpls.length; i++){
+			let tmpl_res = await myquery(query, [ new_tmpls[i], id ]);
+			console.log(tmpl_res);
+		}
+		query = 'DELETE FROM relationTmplProject '
+			+	'WHERE tmplID = ? '
+			+	'and projectID = ? ';
+		for(var i=0; i<lost_tmpls.length; i++){
+			let tmpl_res = await myquery(query, [ lost_tmpls[i], id ]);
+			console.log(tmpl_res);
+		}
+		// console.log(" < tmpl_res > ");
+		// query = "UPDATE relationTagProject "
+		// 		  + "SET name=?, info=? "
+		// 		  + "WHERE id=?;";
+		// let result2 = await myquery(query, [ name, info, tagID ]);
+		// console.log(result2);
+
+		if (callback)
+			await callback();
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function segregateProjectTags(projectID, income_tags, callback){
+	try {
+
+
+		if(callback)
+			await callback();
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.saveTmplChanges = async (tagID, name, callback) => {
+	try {
+		let query = "UPDATE template SET name=? WHERE id=?;";
+		let result = await myquery(query, [ name, tagID ]);
+		if(callback)
+			await callback();
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
 module.exports.saveTagChanges = async (tagID, name, newsyns, callback) => {
 	try {
 		await tagNameCheck(tagID, name, async (res)=>{
@@ -209,15 +390,15 @@ module.exports.saveTagChanges = async (tagID, name, newsyns, callback) => {
 			var lostTag = [];
 			for(var i=0;i<newsyns.length; i++){
 			    if( arr.indexOf(newsyns[i]) < 0 )
-			        newTag.push(newsyns[i])
+			        await newTag.push(newsyns[i])
 			}
 			for(var i=0;i<arr.length; i++){
 			    if( newsyns.indexOf(arr[i]) < 0 )
 			    	if(arr[i] != tagID)
-			        	lostTag.push(arr[i])
+			        	await lostTag.push(arr[i])
 			}
 			var flag;
-			selectTagFlag(tagID, async (_flag)=>{
+			await selectTagFlag(tagID, async (_flag)=>{
 				console.log("flag:"+_flag.flag);
 				flag = _flag.flag
 				if(flag == null)
@@ -231,12 +412,10 @@ module.exports.saveTagChanges = async (tagID, name, newsyns, callback) => {
 		if(callback)
 			await callback();
 		// return result;
-
 	} catch (e) {
 		console.log(e);
 		return 0;
 	}
-
 }
 async function tagNameCheck(tagID,name,callback){
 	try {
@@ -347,8 +526,122 @@ module.exports.selectFlagTemplates = async (tagID, callback) => {
 		return 0;
 	}
 }
-/////////////////////////////////////////////
+module.exports.selectTmplTemplates = async (tmplID, callback) => {
+	try {
+		console.log("< selectTmplTemplates >");
+		console.log(tmplID);
+		let result = await selectTmplKey(tmplID);
+		for(var i in result){
+			result[i].tags = {assocs:[], stops:[]};
+			let conditions = await selectTmplCondition(result[i].id);
+			for(var j in conditions){
+				let tag = {id:conditions[j].tagID, name:conditions[j].name}
+				if( conditions[j].positive == 1 ){
+					result[i].tags.assocs.push(tag);
+				}else{
+					result[i].tags.stops.push(tag);
+				}
+			}
+		}
 
+		console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function selectTmplKey(tmplID){
+	try {
+		console.log("< selectTmplKey >");
+		console.log(tmplID);
+		var query = "select * from replecon.templateKey where tmplID = ?";
+		let result = await myquery( query, [tmplID] );
+
+		console.log(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function selectTmplCondition(tmplKeyID){
+	try {
+		console.log("< selectTmplCondition >");
+		console.log(tmplKeyID);
+		var query = ""
+		+ " select * from replecon.templateCondition tc "
+		+ " left join"
+		+ " (select id, name from replecon.tag)as res "
+		+ " on res.id = tc.tagID"
+		+ " where tc.tmplKeyID = ?"
+		+ " order by tc.id";
+		let result = await myquery( query, [tmplKeyID] );
+
+		console.log(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.createTmplTemplate = async (tmplID, keyword, val, tags, callback) => {
+	try {
+		console.log('< createTmplTemplate >');
+		console.log({tmplID, keyword, val, tags});
+
+		var tmplKeyID = await insertTmplKey(tmplID, keyword, val)
+		var tagID,
+			positive;
+		if(tags.assocs)
+			for(var i in tags.assocs){
+				tagID = tags.assocs[i];
+				positive = 1;
+				await insertTmplCondition(tagID, tmplKeyID, positive);
+			}
+		if(tags.stops)
+			for(var i in tags.stops){
+				tagID = tags.stops[i];
+				positive = 0;
+				await insertTmplCondition(tagID, tmplKeyID, positive);
+			}
+		if(callback)
+			await callback('tmpl inserted');
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function insertTmplKey(tmplID, key, val){
+	try {
+		var query = "INSERT INTO replecon.templateKey (keyword, val, tmplID) values (? ,?, ?)";
+		let result = await myquery( query, [key, val, tmplID] );
+
+		console.log(result);
+		return result.insertId;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function insertTmplCondition(tagID, tmplKeyID, positive){
+	try {
+		console.log('< insertTmplCondition >');
+		console.log({tagID, tmplKeyID, positive});
+		var query = "INSERT INTO replecon.templateCondition (tagID, tmplKeyID, positive) values (? ,?, ?)";
+		let result = await myquery( query, [tagID, tmplKeyID, positive] );
+
+		console.log(result);
+		return result.insertId;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
 module.exports.createTagTemplate = async (tagID,keyword,val, callback) => {
 	try {
 		var query = "INSERT INTO replecon.tagTemplates (flag, keyword, val) values (? ,?, ?)";
@@ -360,6 +653,43 @@ module.exports.createTagTemplate = async (tagID,keyword,val, callback) => {
 		}
 		let result = await myquery(query, [ flag, keyword, val ]);
 		console.log(result);
+		if(callback)
+			await callback(result[0]);
+		return result[0];
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.deleteTmpl = async (tmplID, callback) => {
+	try {
+		var query = "DELETE FROM template WHERE id = ?";
+		var query2 = "DELETE FROM relationTmplProject WHERE tmplID = ?";
+
+		let result = await myquery(query, [ tmplID ]);
+		let result2 = await myquery(query2, [ tmplID ]);
+		console.log(result);
+
+		if(callback)
+			await callback(result);
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.deleteTmplTemplate = async (tmplID, callback) => {
+	try {
+		let result = await myquery(
+			"DELETE FROM templateKey WHERE tmplKeyID = ?"
+			, [ tmplID ]);
+		console.log(result);
+
+		let result2 = await myquery(
+			"DELETE FROM templateKey WHERE id = ?"
+			, [ tmplID ]);
+		console.log(result2);
+
 		if(callback)
 			await callback(result[0]);
 		return result[0];
@@ -464,6 +794,22 @@ module.exports.selectProjectTags = async (id, callback) => {
 	}
 }
 /////////////////////////////////////////////
+module.exports.selectProjectTmpls = async (projID, callback) => {
+	try {		
+		let query = "SELECT res.id, res.name FROM relationTmplProject left join (select id, name from template)as res on res.id = tmplID WHERE projectID = ?";
+		let result = await myquery(query, [projID]);
+		console.log(result);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
 
 module.exports.selectTagSyns = async (id, callback) => {
 	try {	
@@ -516,7 +862,7 @@ module.exports.selectTagSyns = async (id, callback) => {
 }
 /////////////////////////////////////////////
 
-module.exports.selectOriginalSize = async (callback) => {
+module.exports.selectOriginalAllSize = async (callback) => {
 	try {		
 		let query = "SELECT count(*) FROM original";
 		let size = await myquery(query, []);
@@ -628,6 +974,19 @@ module.exports.selectTmpls = async (callback) => {
 		return 0;
 	}
 }
+module.exports.selectTmpl = async (tmplID, callback) => {
+	try {
+		let query = "SELECT * FROM template WHERE id = ?";
+		let result = await myquery(query, [tmplID]);
+
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
 /////////////////////////////////////////////
 module.exports.selectNullTags = async (callback) => {
 	try {
@@ -673,13 +1032,13 @@ module.exports.selectTagsEx = async (callback) => {
 			+ " left join"
 			+ " ("
 			+ " 	SELECT flag, count(*) as syns"
-			+ " 	FROM replecon.tag r2"
+			+ " 	FROM replecon.tag"
 			+ " 	group by flag"
 			+ " ) as res on r.flag = res.flag" 
 			+ " left join"
 			+ " ("
 			+ " 	SELECT flag, count(*) as tmpls"
-			+ " 	FROM replecon.tag r2"
+			+ " 	FROM replecon.tagTemplates"
 			+ " 	group by flag"
 			+ " ) as res2 on r.flag = res2.flag "
 			+ " order by id";
@@ -693,20 +1052,20 @@ module.exports.selectTagsEx = async (callback) => {
 		return 0;
 	}
 }
-module.exports.saveObject = async (data, callback)=>{
-	console.log(' - objectCreate');
+// module.exports.saveObject = async (data, callback)=>{
+// 	console.log(' - objectCreate');
 
-	let query = 'INSERT INTO object (`title`,`description`,`originID`) VALUES (?,?,?)';
-	let result = await myquery(query, [ data.title, data.description, data.original_id] ); // !
+// 	let query = 'INSERT INTO object (`title`,`description`,`originID`) VALUES (?,?,?)';
+// 	let result = await myquery(query, [ data.title, data.description, data.original_id] ); // !
 
-	let query2 = 'INSERT INTO relationProjectObject (`projectID`, `objectID`) VALUES (?, ?);';
-	await myquery(query2, [ data.project_id, result.insertId ] ); // !
+// 	let query2 = 'INSERT INTO relationProjectObject (`projectID`, `objectID`) VALUES (?, ?);';
+// 	await myquery(query2, [ data.project_id, result.insertId ] ); // !
 
-	console.log(' = objectCreate result f()');
-	console.log(result);
-	await callback(result[0]);
-	return result[0];
-}
+// 	console.log(' = objectCreate result f()');
+// 	console.log(result);
+// 	await callback(result[0]);
+// 	return result[0];
+// }
 /////////////////////////////////////////////
 module.exports.selectRandomOriginal = async (projectID, callback) => {
 	const connection 	= await ASYNSQL(); // !
