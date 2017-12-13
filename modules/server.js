@@ -72,6 +72,7 @@ module.exports = function(params){
 					await helpers.selectProjectSize(project_id, async (result4) => {
 						await helpers.selectTmpls( async (result5)=>{
 							await helpers.selectProjectTmpls(project_id, async (result6)=>{
+								console.log( { project:result[0], tags:result2, tagRelation: result3, size: result4, tmpls: result5 , tmplRelation: result6});
 								response.render('pages/project',{ scope : { project:result[0], tags:result2, tagRelation: result3, size: result4, tmpls: result5 , tmplRelation: result6} } );
 							});
 						});
@@ -90,7 +91,8 @@ module.exports = function(params){
 
 				let name = request.body.name;
 				let info = request.body.info;
-				let tmpls = request.body.tmpls;
+				let d_tmpls = request.body.d_tmpls;
+				let t_tmpls = request.body.t_tmpls;
 				let db = request.body.db;
 				let assoc_tags = request.body.assocTags ? request.body.assocTags : [];
 				let stopTags = request.body.stopTags ? request.body.stopTags : []
@@ -106,7 +108,8 @@ module.exports = function(params){
 					name, 
 					info, 
 					tags, 
-					tmpls, 
+					t_tmpls,
+					d_tmpls, 
 					db, 
 					()=>{
 						response.send({result:'saved'});
@@ -121,6 +124,16 @@ module.exports = function(params){
 				console.log(" O O O P S . . . ");
 				response.send({err:'o o o p s'});
 		}
+	});
+
+
+	app.get('/project/:id/objectlist', async (request, response)=>{ 
+		let project_id = request.params.id;
+		await helpers.selectProjectSize(project_id, async (result) => {
+			await helpers.selectProjectObjects(project_id, async (result2) => {
+				response.render('pages/data', {scope: {size:result, array:result2} });
+			});
+		});
 	});
 
 	app.get('/templates', async (request, response) => {
@@ -247,10 +260,11 @@ module.exports = function(params){
 				console.log(result2);
 				await helpers.selectTagSyns(tag_id, async (result3) => {
 					console.log(result3);
-					await helpers.selectFlagTemplates(tag_id, async (result4) => {
-						console.log(result4);
-						response.render('pages/tag',{ scope : { tag:result[0], tags:result2, syns: result3, templates:result4 } } );
-					});
+					// await helpers.selectFlagTemplates(tag_id, async (result4) => {
+						// console.log(result4);
+						response.render('pages/tag',{ scope : { tag:result[0], tags:result2, syns: result3} } );
+						// response.render('pages/tag',{ scope : { tag:result[0], tags:result2, syns: result3, templates:result4 } } );
+					// });
 				});
 			});
 		});
@@ -309,6 +323,39 @@ module.exports = function(params){
 					{size:result, projects:result2}} );
 			});
 		});
+	});
+	app.post('/generator', async (request, response) => {
+		console.log(' < generator >');
+		let project_id,size; 
+
+		switch(request.body.type){
+			case "original.size":
+				console.log("original.size");
+				project_id = request.body.id;
+
+				await helpers.selectProjectOriginalSize(project_id, (result)=>{
+					response.send({res:result});
+					console.log(result);
+				})
+				break;
+			case "object.transfiguration":
+				console.log("object.transfiguration");
+				project_id = request.body.id;
+				size = request.body.size;
+
+				await helpers.createProjectOriginal(project_id, size, (result)=>{
+					response.send({res:result});
+					console.log(result);
+				})
+				break;
+			default:
+				console.log(" O O O P S . . . ");
+				response.send({err:'o o o p s'});
+		}
+		// await helpers.selectProjectOriginal(project_id, (result)=>{
+		// 	console.log(result);
+		// });
+		console.log(' < generator >');
 	});
 
 	app.get('/rewrite', async (request, response) => {

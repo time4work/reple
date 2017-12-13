@@ -58,10 +58,363 @@ module.exports.sshQuery = async function(params, callback){
 	}
 }
 /////////////////////////////////////////////
+
+module.exports.selectProjectOriginalSize = async (projectID, callback) => {
+	const connection 	= await ASYNSQL(); // !
+	try {
+		let positiveArr = [];
+		let negetiveArr = [];
+		await selectProjectTags(connection, projectID, async (result) => {
+			console.log(result);
+			for(var i=0; i < result.length; i++){
+				if(result[i].positive == 0){
+					await negetiveArr.push(result[i].tagID);
+				}else{
+					await positiveArr.push(result[i].tagID);
+				}
+			}
+		});
+		console.log(positiveArr);
+		console.log(negetiveArr);
+
+		let originalIDarr = await findFilteredOriginal(connection, projectID,  {positive:positiveArr, negetive:negetiveArr});
+		console.log(originalIDarr);
+
+		if(callback)
+			await callback(originalIDarr.length);
+		// 	})
+		// });
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.createProjectOriginal = async (projectID, size, callback) => {
+	const connection 	= await ASYNSQL(); // !
+	try {
+		let positiveArr = [];
+		let negetiveArr = [];
+		await selectProjectTags(connection, projectID, async (result) => {
+			console.log(result);
+			for(var i=0; i < result.length; i++){
+				if(result[i].positive == 0){
+					await negetiveArr.push(result[i].tagID);
+				}else{
+					await positiveArr.push(result[i].tagID);
+				}
+			}
+		});
+		console.log(positiveArr);
+		console.log(negetiveArr);
+
+		let originalIDarr = await findFilteredOriginal(connection, projectID, {positive:positiveArr, negetive:negetiveArr});
+		// let originalIDarr = await findFilteredOriginal(connection, {positive:positiveArr, negetive:negetiveArr});
+		// query += " ORDER BY RAND() LIMIT 1 ";
+		console.log(originalIDarr);
+
+		if(size>originalIDarr.length)
+			size = originalIDarr.length;
+
+		for(var j=0; j<size; j++){
+			var originalID = originalIDarr[j].originalID;
+
+			await selectOriginal(connection, originalID, async (original) => {	
+				console.log(original);
+
+				let video_link = original.video;
+				console.log(' < video_link >');
+				console.log(video_link);
+				
+				let d_tmpl_pack = await selectProjectDescriptionTemplate(projectID);
+				// console.log(' < tmpl_pack >');
+				// console.log(tmpl_pack);
+				let d_tmpl = await parseTmplObj(d_tmpl_pack);
+				// console.log(' < tmpl >');
+				// console.log(tmpl);
+
+				let description = await templateParse( d_tmpl['talk'], d_tmpl );
+				console.log(' < description >');
+				console.log(description);	
+
+
+				let t_tmpl_pack = await selectProjectTitleTemplate(projectID);
+				// console.log(' < tmpl_pack >');
+				// console.log(tmpl_pack);
+				let t_tmpl = await parseTmplObj(t_tmpl_pack);
+				// console.log(' < tmpl >');
+				// console.log(tmpl);
+
+				let title = await templateParse( t_tmpl['talk'], t_tmpl );
+				console.log(' < title >');
+				console.log(title);
+
+				
+				let objID = await createObject(projectID,originalID,title, description, video_link);
+				await selectOriginalTags(connection, originalID, async (tags)=>{
+					console.log(tags);
+					await createRelationTagObj(objID, tags);
+				});
+			});
+		}
+
+		// 		console.log(tags);
+		// 		console.log(result);
+		// 		result.tags = tags;
+
+		// 		var obj = JSON.parse(fs.readFileSync('./modules/template2.json', 'utf8'));
+		// 		result.description = await templateParse( obj['start'], obj );
+		result = originalIDarr;
+		if(callback)
+			await callback(result);
+		// 	})
+		// });
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+};
+async function createRelationTagObj(objID, tags){
+	try {
+		var query = ""
+				+ " Insert Into"
+				+ " relationTagObject "
+				+ " (tagID, objectID)"
+				+ " values (?,?)";
+		for(var i=0; i<tags.length; i++){
+			let tagID = tags[i].tagID;
+			console.log({tag: tagID, obj: objID});
+			await myquery(query, [ tagID, objID ]);
+		}
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}	
+}
+async function createObject(projectID,originalID,title, description, link){
+	try {
+		var query = ""
+				+ " Insert Into"
+				+ " object "
+				+ " (DataTitle1, DataLink1, DataText1, FootPrint1)"
+				+ " values (?,?,?,?)";
+		let object = await myquery(query, [ title,link,description,originalID ]);
+		console.log(object);
+		let objectID = object.insertId;
+
+		query = ""
+				+ " Insert Into"
+				+ " relationProjectObject"
+				+ " (projectID, objectID)"
+				+ " values (?,?)";
+		let relation = await myquery(query, [ projectID,objectID ]);
+		console.log(relation);
+
+		query = ""
+				+ " Insert Into"
+				+ " relationProjectOriginal"
+				+ " (projectID, originalID)"
+				+ " values (?,?)";
+		let relation2 = await myquery(query, [ projectID,originalID ]);
+		console.log(relation2);
+
+		// if(callback)
+		// 	await callback(result);
+		return objectID;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function parseTmplObj(json){
+	var tmpl_arr= json.map((item)=>{
+		var obj = {};
+		obj[item['keyword']] = [];
+		return obj;
+	});
+	var tmpls = {};
+	Array.prototype.forEach.call(tmpl_arr,function(elem) {
+	   var keys = Object.keys(elem);
+	   tmpls[keys[0]] = elem[keys[0]];
+	});
+	for(var i=0; i<json.length; i++){
+		var key = json[i]['keyword']
+		// console.log(key);
+		var val = json[i]['val']
+		// console.log(val);
+		tmpls[key].push(val);
+	}
+	return tmpls;
+}
+async function selectProjectDescriptionTemplate (projectID,tags, callback)  {
+	try {
+		var query = ""
+			+ " SELECT *"
+			+ " FROM relationTmplProject"
+			+ " WHERE projectID = ? and type = 'description'"
+			+ " ORDER BY RAND() LIMIT 1 ";
+		let relation = await myquery(query, [ projectID ]);
+		console.log(relation);
+		if(!relation[0])
+			return;
+		let tmplID = relation[0].tmplID;
+		console.log(tmplID);
+
+		query = ""
+			+ " SELECT *"
+			+ " FROM templateKey"
+			+ " WHERE tmplID = ?";
+		let result = await myquery(query, [ tmplID ]);
+		console.log(result);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function selectProjectTitleTemplate (projectID,tags, callback)  {
+	try {
+		var query = ""
+			+ " SELECT *"
+			+ " FROM relationTmplProject"
+			+ " WHERE projectID = ? and type = 'title'"
+			+ " ORDER BY RAND() LIMIT 1 ";
+		let relation = await myquery(query, [ projectID ]);
+		console.log(relation);
+		if(!relation[0])
+			return;
+		let tmplID = relation[0].tmplID;
+		console.log(tmplID);
+
+		query = ""
+			+ " SELECT *"
+			+ " FROM templateKey"
+			+ " WHERE tmplID = ?";
+		let result = await myquery(query, [ tmplID ]);
+		console.log(result);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+ async function selectFlagTemplates (tagID, callback)  {
+	try {
+		var query = ""
+			+ " SELECT *"
+			+ " FROM replecon.tagTemplates"
+			+ " WHERE flag ="
+			+ " ("
+			+ " SELECT flag"
+			+ " FROM replecon.tag"
+			+ " WHERE id = ?"
+			+ " )"
+		let result = await myquery(query, [ tagID ]);
+
+		console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function findFilteredOriginal(connection, projectID, tagIDs){
+	try {
+		let query = " SELECT originalID " +
+					" FROM relationTagOriginal ";
+		if(tagIDs.positive.length > 0){
+			query += " WHERE tagID in ( "
+
+			for(var j=0; j<tagIDs.positive.length; j++){
+				if(j == tagIDs.positive.length-1)
+					query += " " + tagIDs.positive[j] + " ";
+				else
+					query += " " + tagIDs.positive[j] + ", ";
+			}
+			query += " ) ";			
+			// for(var j=0; j<tagIDs.positive.length; j++){
+			// 	if(j==0)
+			// 		query += " WHERE tagID = " + tagIDs.positive[j];
+			// 	else
+			// 		query += " OR tagID = " + tagIDs.positive[j];
+			// }
+		}
+
+		if(tagIDs.negetive.length > 0){
+			if( !tagIDs.positive.length )
+				query += " WHERE ";
+			else
+				query += " AND ";
+
+			query += " originalID not in " +
+					" ( " +
+					" SELECT originalID " +
+					" FROM relationTagOriginal ";
+			for(var j=0; j<tagIDs.negetive.length; j++){
+				if(j==0)
+					query += " WHERE tagID = " + tagIDs.negetive[j];
+				else
+					query += " OR tagID = " + tagIDs.negetive[j];
+			}
+			query += " ) ";
+		}
+		query += ""
+			+	"AND originalID not in ("
+			+	"select originalID "
+			+	"from replecon.relationProjectOriginal "
+			+	"where projectID = "+projectID
+			+	")";
+		query += "GROUP BY originalID";
+		// query += " ORDER BY RAND() LIMIT 1 ";
+		console.log(query);
+
+		let fields = await connection.execute( query ); // !
+		let result = fields[0];
+
+		console.log(result);
+		return result;
+		// await callback(results);
+	} catch (e) {
+		console.log(e);
+		return -1;
+	}
+}
 module.exports.createProject = async (name, callback) => {
 	try {
 		var query = "INSERT INTO project (`name`) VALUES (?)";
 		let result = await myquery(query, [ name ]);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.selectProjectObjects = async (projectID, callback) => {
+	try {
+		var query = ""
+				+	" SELECT *" 
+				+	" FROM replecon.object"
+				+	" WHERE id in"
+				+	" (SELECT objectID"
+				+	" FROM replecon.relationProjectObject"
+				+	" WHERE projectID = ?)";
+		let result = await myquery(query, [ projectID ]);
 
 		if(callback)
 			await callback(result);
@@ -183,9 +536,9 @@ module.exports.setProjectTags = async (tagID,projID,positive, callback) => {
 	}
 }
 /////////////////////////////////////////////
-module.exports.saveProjectChanges = async (id, name, info, tags, tmpls, db, callback) => {
+module.exports.saveProjectChanges = async (id, name, info, tags, t_tmpls, d_tmpls, db, callback) => {
 	try {
-		console.log({name, info, tags, tmpls, db, callback});
+		console.log({name, info, tags, t_tmpls, d_tmpls, db, callback});
 		if(!name )
 			return
 		let query;
@@ -289,16 +642,10 @@ module.exports.saveProjectChanges = async (id, name, info, tags, tmpls, db, call
 			}
 		///////////////////////////////////////////
 		console.log('< p_tmpls_res >');
-		// query = "select r.id, res.id as `tmplID` "
-		// 	+	"from relationTmplProject r "
-		// 	+	"left join "
-		// 	+	"(select id, name from template) "
-		// 	+	"as res on res.id = r.tmplID "
-		// 	+	"where r.projectID = ? "
-		// 	+	"order by res.id";
+
 		query = "select tmplID "
 			+	"from relationTmplProject "
-			+	"where projectID = ? "
+			+	"where projectID = ? and type = `title`"
 		let p_tmpls_res = await myquery(query, [ id ]);
 		console.log(p_tmpls_res);
 
@@ -310,15 +657,15 @@ module.exports.saveProjectChanges = async (id, name, info, tags, tmpls, db, call
 		var new_tmpls = [];
 		var lost_tmpls = [];
 
-		if(!tmpls)
-			tmpls = [];
+		if(!t_tmpls)
+			t_tmpls = [];
 
-		for(var i=0;i<tmpls.length; i++){
-		    if( p_tmpls.indexOf(tmpls[i]) < 0 )
-		        await new_tmpls.push(tmpls[i])
+		for(var i=0;i<t_tmpls.length; i++){
+		    if( p_tmpls.indexOf(t_tmpls[i]) < 0 )
+		        await new_tmpls.push(t_tmpls[i])
 		}
 		for(var i=0;i<p_tmpls.length; i++){
-		    if( tmpls.indexOf(p_t_a[i]) < 0 )
+		    if( t_tmpls.indexOf(p_t_a[i]) < 0 )
 	        	await lost_tmpls.push(p_tmpls[i])
 		}
 		console.log('< new_tmpls >');
@@ -328,26 +675,65 @@ module.exports.saveProjectChanges = async (id, name, info, tags, tmpls, db, call
 
 		console.log('< tmpl_res >');
 		query = 'insert into '
-			+	'relationTmplProject(tmplID, projectID) '
-			+	'values(?,?)';
+			+	'relationTmplProject(tmplID, projectID, type) '
+			+	'values(?,?,?)';
 		for(var i=0; i<new_tmpls.length; i++){
-			let tmpl_res = await myquery(query, [ new_tmpls[i], id ]);
+			let tmpl_res = await myquery(query, [ new_tmpls[i], id, 'title' ]);
 			console.log(tmpl_res);
 		}
 		query = 'DELETE FROM relationTmplProject '
 			+	'WHERE tmplID = ? '
-			+	'and projectID = ? ';
+			+	'and projectID = ? and type = `title`';
 		for(var i=0; i<lost_tmpls.length; i++){
 			let tmpl_res = await myquery(query, [ lost_tmpls[i], id ]);
 			console.log(tmpl_res);
 		}
-		// console.log(" < tmpl_res > ");
-		// query = "UPDATE relationTagProject "
-		// 		  + "SET name=?, info=? "
-		// 		  + "WHERE id=?;";
-		// let result2 = await myquery(query, [ name, info, tagID ]);
-		// console.log(result2);
+		////////////////////////////////////////////
+		query = "select tmplID "
+			+	"from relationTmplProject "
+			+	"where projectID = ? and type = `description`"
+		let _p_tmpls_res = await myquery(query, [ id ]);
+		console.log(_p_tmpls_res);
 
+		var p_tmpls = [];
+		for(var i=0; i<_p_tmpls_res.length;i++){
+			await p_tmpls.push(_p_tmpls_res[i].tmplID);
+		}
+
+		var _new_tmpls = [];
+		var _lost_tmpls = [];
+
+		if(!d_tmpls)
+			d_tmpls = [];
+
+		for(var i=0;i<d_tmpls.length; i++){
+		    if( p_tmpls.indexOf(d_tmpls[i]) < 0 )
+		        await _new_tmpls.push(d_tmpls[i])
+		}
+		for(var i=0;i<p_tmpls.length; i++){
+		    if( d_tmpls.indexOf(p_t_a[i]) < 0 )
+	        	await _lost_tmpls.push(p_tmpls[i])
+		}
+		console.log('< new_tmpls >');
+		console.log(_new_tmpls);
+		console.log('< lost_tmpls >');
+		console.log(_lost_tmpls);
+
+		console.log('< tmpl_res >');
+		query = 'insert into '
+			+	'relationTmplProject(tmplID, projectID, type) '
+			+	'values(?,?,?)';
+		for(var i=0; i<_new_tmpls.length; i++){
+			let tmpl_res = await myquery(query, [ _new_tmpls[i], id, 'description' ]);
+			console.log(tmpl_res);
+		}
+		query = 'DELETE FROM relationTmplProject '
+			+	'WHERE tmplID = ? '
+			+	'and projectID = ? and type = `description`';
+		for(var i=0; i<_lost_tmpls.length; i++){
+			let tmpl_res = await myquery(query, [ _lost_tmpls[i], id ]);
+			console.log(tmpl_res);
+		}
 		if (callback)
 			await callback();
 	} catch (e) {
@@ -594,7 +980,7 @@ module.exports.createTmplTemplate = async (tmplID, keyword, val, tags, callback)
 		console.log('< createTmplTemplate >');
 		console.log({tmplID, keyword, val, tags});
 
-		var tmplKeyID = await insertTmplKey(tmplID, keyword, val)
+		var tmplKeyID = await insertTmplKey(tmplID, keyword, val);
 		var tagID,
 			positive;
 		if(tags.assocs)
@@ -796,7 +1182,7 @@ module.exports.selectProjectTags = async (id, callback) => {
 /////////////////////////////////////////////
 module.exports.selectProjectTmpls = async (projID, callback) => {
 	try {		
-		let query = "SELECT res.id, res.name FROM relationTmplProject left join (select id, name from template)as res on res.id = tmplID WHERE projectID = ?";
+		let query = "SELECT res.id, res.name, type FROM relationTmplProject left join (select id, name from template)as res on res.id = tmplID WHERE projectID = ?";
 		let result = await myquery(query, [projID]);
 		console.log(result);
 
@@ -1157,7 +1543,7 @@ async function selectOriginalTags(connection, originalID, callback){
 async function findOriginal(connection, tagIDs){
 	try {
 		let query = " SELECT originalID " +
-		" FROM relationTagOriginal ";
+					" FROM relationTagOriginal ";
 		if(tagIDs.positive.length > 0){
 			for(var j=0; j<tagIDs.positive.length; j++){
 				if(j==0)
@@ -1167,10 +1553,10 @@ async function findOriginal(connection, tagIDs){
 			}
 		}
 		if(tagIDs.negetive.length > 0){
-			query += " AND originalID not in "+
-			" ( "+
-			" SELECT originalID "+
-			" FROM relationTagOriginal ";
+			query += " AND originalID not in " +
+					" ( " +
+					" SELECT originalID " +
+					" FROM relationTagOriginal ";
 			for(var j=0; j<tagIDs.negetive.length; j++){
 				if(j==0)
 					query += " WHERE tagID = " + tagIDs.negetive[j];
@@ -1179,11 +1565,11 @@ async function findOriginal(connection, tagIDs){
 			}
 			query += " ) ";
 		}
-		query += " ORDER BY RAND() LIMIT 1 ";
+		// query += " ORDER BY RAND() LIMIT 1 ";
 		console.log(query);
 
 		let fields = await connection.execute( query ); // !
-		let result = fields[0][0];
+		let result = fields[0];
 
 		console.log(result);
 		console.log(result.originalID);
@@ -1335,9 +1721,9 @@ async function magic(connection, item){
 function templateParse(e, obj){
 	var regexp = /<\w*>/ig;
 
-	console.log('- e:');
-	console.log(e);
-	console.log('-----');
+	// console.log('- e:');
+	// console.log(e);
+	// console.log('-----');
 
 	if ( Array.isArray(e) ){
 		return templateParse( rand(e), obj );
@@ -1353,6 +1739,7 @@ function templateParse(e, obj){
 				result += templateParse( obj[ind], obj );
 				last_pos = regexp.lastIndex;
 			}
+			result += e.substring(last_pos,e.length);
 			return result;
 		}else{
 			return e;

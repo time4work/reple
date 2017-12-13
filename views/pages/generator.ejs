@@ -22,24 +22,88 @@
 		<div class="col-md-offset-1 col-md-10">
 	    	<h3>Select Project</h3>
 			<select id='project-select' onchange="if (this.selectedIndex) getOriginSize(this, event);">
+				
 				<option></option>
 				<% scope.projects.forEach(function(project, iter){ %>
 					<option project-id='<%= project.id %>'><%= project.name %></option>
 				<% }); %>
+
 			</select>
+			<div class="range-section">
+
+			</div>
 		</div>
 	</section>
 	<hr>
 </body>
 <script>
-    // var select = document.getElementById("project-select");
-    // var id = y.options[y.selectedIndex].getAttribute('proj-id');
+	var url = '/generator';
     function getOriginSize(that, event){
     	console.log(that);
     	console.log(event);
+    	
+    	$('.range-section').html("");
+
     	var id = that.options[that.selectedIndex].getAttribute('project-id');
-    	if(id)
-    		console.log(id);
+    	if(id){
+    		var data = {};
+			data['id'] = JSON.stringify(parseInt(id));
+			data['type'] = "original.size";
+			console.log(data);
+
+			ajax(url, data, (resp)=>{
+				console.log(resp);
+				if(resp.res){
+					var x = document.createElement("INPUT");
+					x.setAttribute("type", "range");
+					x.setAttribute("max", resp.res);
+					x.setAttribute("min", "0");
+					x.setAttribute("step", "1");
+					x.setAttribute("value", "0");
+					x.setAttribute("id", "original-input-range");
+
+					var max = document.createElement("SPAN");
+					max.setAttribute("id", "input-max-value");
+					max.innerHTML = resp.res;
+
+					var y = document.createElement("LABEL");
+					y.setAttribute("id", "original-input-value");
+					y.innerHTML = 0;
+
+					var z = document.createElement("INPUT");
+					z.setAttribute("type", "button");
+					z.setAttribute("value", "generate");
+					z.setAttribute("id", "generate-button");
+					z.setAttribute("class", "btn");
+
+					x.addEventListener("input", ()=>{
+						let val = $('#original-input-range').val();
+						$('#original-input-value').html(val);
+					});
+
+					z.addEventListener("click", ()=>{
+						let val = $('#original-input-range').val();
+						let data2 = {};
+						data2['id'] = JSON.stringify(parseInt(id));
+						data2['size'] = val;
+						data2['type'] = "object.transfiguration";
+						ajax(url, data2, (resp)=>{
+							console.log(resp);
+							location.reload();
+						});
+					});
+
+					$('.range-section').append(x);
+					$('.range-section').append(max);
+					$('.range-section').append(y);
+					$('.range-section').append(z);
+
+				}
+				if(resp.res == 0){
+					$('.range-section').append("<span>0 appropriate originals </span>");
+				}
+			});
+    	}
     }
 	$(function(){
 

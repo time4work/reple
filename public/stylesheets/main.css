@@ -66,7 +66,7 @@ nav.top-menu {
     width: 100%;
     overflow: hidden;
     border-bottom: 1px solid silver;
-    background: white;
+    background: rgba(255, 255, 255, 0.82);
 }
 .bottom-nav {
     position: fixed;
@@ -295,6 +295,44 @@ section#tag-details {
     display: inline-block;
     position: relative;
     float: left;
+}
+.range-section {
+    position: relative;
+    padding: 20px 20px;
+    margin: 10px 0;
+    border: 1px solid rgba(128, 128, 128, 0.44);
+}
+a.p-top-link {
+    text-transform: capitalize;
+    text-align: right;
+    display: block;
+    position: absolute;
+    top: -20px;
+    right: 5px;
+}
+.range-section span#input-max-value {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    border: 1px solid #c3bebe;
+    border-top-right-radius: 4px;
+    width: 100px;
+    height: 21px;
+    text-align: center;
+    background: #e3ddd8;
+}
+.range-section input#original-input-range {
+    margin: 10px 0px;
+}
+.range-section label#original-input-value {
+    width: 80px;
+    background: #fff7f0;
+    padding: 5px 5px;
+    padding-top: 3px;
+    padding-bottom: 4px;
+    outline: 1px solid #dddddd;
+    margin-right: -1px;
+    margin-bottom: 5px;
 }
 section#tags-page h1{
     letter-spacing: 10px;

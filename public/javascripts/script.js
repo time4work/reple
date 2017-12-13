@@ -37,14 +37,18 @@ function projForm(e) {
     var info = $('#description-textarea').val();
     var assocTags = $('#assoc-tag').val();
     var stopTags = $('#stop-tag').val();
-    var tmpls = $('#tmpls').val();
+    var d_tmpls = $('#d-tmpls').val();
+    var t_tmpls = $('#t-tmpls').val();
 
     if( assocTags )
         assocTags = assocTags.map((e)=>{ return parseInt(e, 10); });
     if( stopTags )
         stopTags = stopTags.map((e)=>{ return parseInt(e, 10); });
-    if( tmpls )
-        tmpls = tmpls.map((e)=>{ return parseInt(e, 10); });
+    if( d_tmpls )
+        d_tmpls = d_tmpls.map((e)=>{ return parseInt(e, 10); });
+    if( t_tmpls )
+        t_tmpls = t_tmpls.map((e)=>{ return parseInt(e, 10); });
+
     var data = {};
     data.type = 'project.save';
 
@@ -52,7 +56,8 @@ function projForm(e) {
     data.info = info;
     data.assocTags = assocTags;
     data.stopTags = stopTags;
-    data.tmpls = tmpls;
+    data.d_tmpls = d_tmpls;
+    data.t_tmpls = t_tmpls;
 
     var xhr = new XMLHttpRequest();
     xhr.open("POST", '/project/'+project_id, true);
