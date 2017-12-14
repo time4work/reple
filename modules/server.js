@@ -44,7 +44,7 @@ module.exports = function(params){
 		});
 	});
 	app.post('/projects', async (request, response) => {
-		let name = request.body.name;
+		let name = request.body.name.toLowerCase();
 
 		switch(request.body.type){
 			case "search":
@@ -89,7 +89,7 @@ module.exports = function(params){
 			case "project.save":
 				console.log("project.save");
 
-				let name = request.body.name;
+				let name = request.body.name.toLowerCase();
 				let info = request.body.info;
 				let d_tmpls = request.body.d_tmpls;
 				let t_tmpls = request.body.t_tmpls;
@@ -143,7 +143,7 @@ module.exports = function(params){
 		
 	});
 	app.post('/templates', async (request, response) => {
-		let name = request.body.name;
+		let name = request.body.name.toLowerCase();
 		if(!name)
 			response.send("oops");
 		else
@@ -183,7 +183,7 @@ module.exports = function(params){
 		switch(request.body.type){
 			case "saveT":
 				console.log("save");
-				let name = request.body.name;
+				let name = request.body.name.toLowerCase();
 				if(!name)
 					return;
 				await helpers.saveTmplChanges(tmpl_id, name, ()=>{
@@ -232,7 +232,7 @@ module.exports = function(params){
 		});
 	});
 	app.post('/tags', async (request, response) => {
-		let name = request.body.name;
+		let name = request.body.name.toLowerCase();
 		if(!name)
 			response.send("oops");
 		else
@@ -275,7 +275,7 @@ module.exports = function(params){
 		switch(request.body.type){
 			case "save":
 				console.log("save");
-				let name = request.body.name;
+				let name = request.body.name.toLowerCase();
 				let syns = request.body.syns;
 				let syn_arr = syns.split(',').map((x)=>{ return parseInt(x)});
 
@@ -285,7 +285,7 @@ module.exports = function(params){
 				break;
 			case "newTempl":
 				console.log("newTemplate");
-				let key = request.body.key;
+				let key = request.body.key.toLowerCase();
 				let val = request.body.val;
 				await helpers.createTagTemplate(tag_id, key, val, (result) => {
 					response.send(result);
@@ -352,31 +352,10 @@ module.exports = function(params){
 				console.log(" O O O P S . . . ");
 				response.send({err:'o o o p s'});
 		}
-		// await helpers.selectProjectOriginal(project_id, (result)=>{
-		// 	console.log(result);
-		// });
 		console.log(' < generator >');
 	});
 
-	app.get('/rewrite', async (request, response) => {
-		await helpers.selectProjects( (result) => {
-			response.render('pages/rewrite',{array : result});
-		});
-	});
-	app.post('/rewrite', async (request, response) => {
-		let query = await querystring.stringify({
-			project: request.body.project
-		});
-		response.redirect('/rewriter?' + query);
-	});
-	
-	app.get('/rewriter', async (request, response) => {
-		let project_id = request.query.project;
-		await helpers.selectRandomOriginal(project_id, async (data) => {	
-			console.log({object: data});
-			response.render('pages/rewriter', {object: data, project:{id:request.query.project}});
-		});
-	});
+
 
 	app.get('/query', async (request, response) => {
 		response.render('pages/query');
@@ -405,7 +384,25 @@ module.exports = function(params){
 }
 
 
-
+	// app.get('/rewrite', async (request, response) => {
+	// 	await helpers.selectProjects( (result) => {
+	// 		response.render('pages/rewrite',{array : result});
+	// 	});
+	// });
+	// app.post('/rewrite', async (request, response) => {
+	// 	let query = await querystring.stringify({
+	// 		project: request.body.project
+	// 	});
+	// 	response.redirect('/rewriter?' + query);
+	// });
+	
+	// app.get('/rewriter', async (request, response) => {
+	// 	let project_id = request.query.project;
+	// 	await helpers.selectRandomOriginal(project_id, async (data) => {	
+	// 		console.log({object: data});
+	// 		response.render('pages/rewriter', {object: data, project:{id:request.query.project}});
+	// 	});
+	// });
 	// app.post('/rewriter', async (request, response) => {
 	// 	console.log(request.body);
 	// 	await helpers.saveObject(request.body, async (result)=>{

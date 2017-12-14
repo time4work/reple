@@ -585,6 +585,7 @@ section#project-details {
 }*/
 .tag-tmpls li{
     position: relative;
+    margin-bottom: 5px;
 }
 .tag-tmpls div.remove {
     position: absolute;
@@ -602,6 +603,15 @@ section#project-details {
 .tag-tmpls p {
     border: 1px solid gainsboro;
     padding: 2px 5px;
+    margin: 0;
+}
+.stops-tag-list {
+    border: 1px solid rgba(255, 0, 0, 0.24);
+    border-radius: 2px;
+}
+.assoc-tag-list {
+    border: 1px solid rgba(0, 217, 255, 0.24);
+    border-radius: 2px;
 }
 .tag-tmpls {
     padding: 0 10px;

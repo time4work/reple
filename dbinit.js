@@ -20,7 +20,7 @@ var queries = {
 	
 	'template-key': 		"CREATE TABLE IF NOT EXISTS replecon.templateKey(id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255),val VARCHAR(255),tmplID int(4) NOT NULL,FOREIGN KEY (tmplID) REFERENCES replecon.template(id))ENGINE = InnoDB",
 	'template-condition': 	"CREATE TABLE IF NOT EXISTS replecon.templateCondition(id INT AUTO_INCREMENT PRIMARY KEY, tagID int(4) NOT NULL,tmplKeyID int(4) NOT NULL,positive BOOLEAN NOT NULL,FOREIGN KEY (tagID) REFERENCES replecon.tag(id),FOREIGN KEY (tmplKeyID) REFERENCES replecon.templateKey(id))ENGINE = InnoDB",
-	'tag-template': 'CREATE TABLE IF NOT EXISTS replecon.tagTemplates (id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255), val VARCHAR(600), flag INT(4) )ENGINE = InnoDB',
+	// 'tag-template': 'CREATE TABLE IF NOT EXISTS replecon.tagTemplates (id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255), val VARCHAR(600), flag INT(4) )ENGINE = InnoDB',
 
 	'relation-tag-original': 	'CREATE TABLE IF NOT EXISTS replecon.relationTagOriginal (id INT AUTO_INCREMENT PRIMARY KEY, tagID INT(4) NOT NULL,  originalID INT(4) NOT NULL, FOREIGN KEY (tagID) REFERENCES replecon.tag(id), FOREIGN KEY (originalID) REFERENCES replecon.original(id))ENGINE = InnoDB',
 	'relation-tag-project': 	'CREATE TABLE IF NOT EXISTS replecon.relationTagProject (id INT AUTO_INCREMENT PRIMARY KEY, tagID INT(4) NOT NULL,  projectID INT(4) NOT NULL, positive BOOLEAN NOT NULL , FOREIGN KEY (projectID) REFERENCES replecon.project(id), FOREIGN KEY (tagID) REFERENCES replecon.tag(id))ENGINE = InnoDB',
