@@ -136,11 +136,17 @@ module.exports = function(params){
 		});
 	});
 
+	app.get('/project/:id/export', async (request, response)=>{ 
+		let project_id = request.params.id;
+		await helpers.selectProjectSize(project_id, async (result) => {
+			response.render('pages/export',{scope: {size:result}});
+		});		
+	});
+
 	app.get('/templates', async (request, response) => {
 		await helpers.selectTmpls( async (result) => {
 			response.render('pages/templates', {array: result });
 		});
-		
 	});
 	app.post('/templates', async (request, response) => {
 		let name = request.body.name.toLowerCase();
@@ -192,7 +198,9 @@ module.exports = function(params){
 				break;
 			case "newTTmpl":
 				console.log("newTemplate");
-				let key = request.body.key;
+				let key = request.body.key
+					.toLowerCase()
+					.replace(/[<>]*/g,'');
 				if(!key) return
 
 				let val = request.body.val;
@@ -326,7 +334,7 @@ module.exports = function(params){
 	});
 	app.post('/generator', async (request, response) => {
 		console.log(' < generator >');
-		let project_id,size; 
+		let project_id,size;
 
 		switch(request.body.type){
 			case "original.size":

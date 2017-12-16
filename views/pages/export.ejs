@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html class="ng-scope" np-app="Reple">
+<head>
+  <% include ../partials/header.ejs %>
+</head>
+<body>
+  <% include ../partials/topnav.ejs %>
+  <div class="container">
+  	<h1>Export Page</h1>
+  	<h3>Data length: <%=scope.size%></h3>
+  	<hr>
+  </div>
+
+  <section id="export-body" class='col-md-offset-1 col-md-10'>
+  	<div class="action-board col-md-8"></div>
+  	<div class="info-table col-md-4">
+  		<h3>Time Line</h3>
+  		<div class="overflow-wrapper">
+	  		<table>
+	  			<tbody>
+					<tr>
+						<td>
+							<h5>export</h5>
+							<p class='items'>180 objects</p>
+							<p class='date'>29.12.2017 <span class='time'>12:02:23</span></p>
+							<hr>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<h5>update</h5>
+							<p class='items'>-20 objects</p>
+							<p class='date'>29.12.2017 <span class='time'>12:02:23</span></p>
+							<hr>
+						</td>
+						
+					</tr>
+					<tr>
+						<td>
+							<h5>import</h5>
+							<p class='items'>100 objects</p>
+							<p class='date'>29.12.2017 <span class='time'>12:02:23</span></p>
+							<hr>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<h5>import</h5>
+							<p class='items'>100 objects</p>
+							<p class='date'>29.12.2017 <span class='time'>11:02:23</span></p>
+							<hr>
+						</td>
+					</tr>
+	  			</tbody>
+	  		</table>
+  		</div>
+
+  	</div>
+  </section>
+</body>
+</html>

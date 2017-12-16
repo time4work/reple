@@ -126,8 +126,18 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				console.log(video_link);
 
 				let originalTags = await selectOriginalTags(connection, originalID);
-
-				let d_tmpl_pack = await selectProjectDescriptionTemplate(projectID,originalTags);
+				let synTags = [];
+				for(var i=0; i<originalTags.length; i++){
+					let syns = await selectTagSyns(originalTags[i]);
+					
+					if(syns)
+						for(var j=0; j<syns.length; j++){
+							synTags.push(syns[j]);
+						}
+					else	
+						synTags.push(originalTags[i]);				
+				}
+				let d_tmpl_pack = await selectProjectDescriptionTemplate(projectID,synTags);
 				// console.log(' < tmpl_pack >');
 				// console.log(tmpl_pack);
 				let d_tmpl = await parseTmplObj(d_tmpl_pack);
@@ -138,8 +148,9 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				console.log(' < description >');
 				console.log(description);	
 
+					
 
-				let t_tmpl_pack = await selectProjectTitleTemplate(projectID, originalTags);
+				let t_tmpl_pack = await selectProjectTitleTemplate(projectID, synTags);
 				// console.log(' < tmpl_pack >');
 				// console.log(tmpl_pack);
 				let t_tmpl = await parseTmplObj(t_tmpl_pack);
@@ -151,8 +162,8 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				console.log(title);
 
 				
-				// let objID = await createObject(projectID,originalID,title, description, video_link);
-				// await createRelationTagObj(objID, originalTags);
+				let objID = await createObject(projectID,originalID,title, description, video_link);
+				await createRelationTagObj(objID, originalTags);
 			});
 		}
 
@@ -297,8 +308,16 @@ async function selectProjectTitleTemplate (projectID, tags, callback)  {
 		let keys = await myquery(query, [ tmplID ]);
 		console.log(keys);
 
-		console.log(tags);
 // ----------------------------------------------------
+
+		console.log(tags);
+		let tagIDs = [];
+		for(var i=0; i<tags.length; i++){
+			tagIDs.push(tags[i].id);
+		}
+		console.log(" < tagIDs >");
+		console.log(tagIDs);
+
 		query = ""
 			+ " SELECT *"
 			+ " FROM templateCondition"
@@ -312,42 +331,83 @@ async function selectProjectTitleTemplate (projectID, tags, callback)  {
 		console.log(" < tmpl condition >");
 		console.log(condition);
 
-		console.log(" < tmpl condition check >");
 		var result = [];
 		if(!condition)
 			result = keys;
-		else
+		else{
+			var n_condition = [],
+				p_condition = [];
+			for(var i=0; i<condition.length; i++){
+				if(condition[i].positive)
+					p_condition.push(condition[i]);
+				else
+					n_condition.push(condition[i]);
+			}
+			console.log(" < p_condition >");
+			console.log(p_condition);
+			console.log(" < n_condition >");
+			console.log(n_condition);
+			
+
+			console.log(" < tmpl condition check >");
 			for(var i=0; i<keys.length; i++){
-				console.log();
 				var bool = true;
-				console.log(keys[i]);
 
-				for(var j=0; j<condition.length; j++){
-					console.log(condition[j]);
-				
-					if( keys[i].id == condition[j].tmplKeyID ){
-						// condition[j].positive
-						if(condition[j].positive)
-							bool = false;
-						else
+				for(var j=0; j<p_condition.length; j++){
+					if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
+
+						bool = false;
+						if( tagIDs.indexOf(p_condition[j].tagID) ){
 							bool = true;
-
-						for(var g=0; g<tags.length; g++){
-							console.log(tags[g]);
-							console.log(condition[j].tagID + " == " + tags[g].tagID);
-							console.log(condition[j].positive);
-							if( condition[j].tagID == tags[g].tagID ){
-								bool = condition[j].positive 
-								? true
-								: false;
-							}
-							console.log("bool "+ bool);
-						}
+							break;
+						} 
 					}
 				}
-				console.log(keys[i]);
+
+				for(var j=0; j<n_condition.length; j++){
+					if( n_condition[j].tmplKeyID == keys[i].id ){
+
+						bool = true;
+						if( tagIDs.indexOf(n_condition[j].tagID) ){
+							bool = false;
+							break;
+						} 
+					}
+				}
 				if( bool ) result.push(keys[i]);
 			}
+		}
+		// 	for(var i=0; i<keys.length; i++){
+		// 		console.log();
+		// 		var bool = true;
+		// 		console.log(keys[i]);
+
+		// 		for(var j=0; j<condition.length; j++){
+		// 			console.log(condition[j]);
+				
+		// 			if( keys[i].id == condition[j].tmplKeyID ){
+		// 				// condition[j].positive
+		// 				if(condition[j].positive)
+		// 					bool = false;
+		// 				else
+		// 					bool = true;
+
+		// 				for(var g=0; g<tags.length; g++){
+		// 					console.log(tags[g]);
+		// 					console.log(condition[j].tagID + " == " + tags[g].tagID);
+		// 					console.log(condition[j].positive);
+		// 					if( condition[j].tagID == tags[g].tagID ){
+		// 						bool = condition[j].positive 
+		// 						? true
+		// 						: false;
+		// 					}
+		// 					console.log("bool "+ bool);
+		// 				}
+		// 			}
+		// 		}
+		// 		console.log(keys[i]);
+		// 		if( bool ) result.push(keys[i]);
+		// 	}
 		console.log(result);
 // ----------------------------------------------------
 		if(callback)
