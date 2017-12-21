@@ -16,8 +16,52 @@ var queries = {
 	'original': 	'CREATE TABLE IF NOT EXISTS replecon.original (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), link VARCHAR(600), video VARCHAR(600),  description VARCHAR(1500))ENGINE = InnoDB',
 	'template': 	"CREATE TABLE IF NOT EXISTS replecon.template (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(255), UNIQUE(name))ENGINE = InnoDB",
 
-	'project-db': 	"CREATE TABLE IF NOT EXISTS replecon.projectDB (id INT AUTO_INCREMENT PRIMARY KEY,host VARCHAR(255),port VARCHAR(255),user VARCHAR(255),password VARCHAR(255),dbname VARCHAR(255))ENGINE = InnoDB",
-	
+	// 'project-db': 	"CREATE TABLE IF NOT EXISTS replecon.projectDB (id INT AUTO_INCREMENT PRIMARY KEY,host VARCHAR(255),port VARCHAR(255),user VARCHAR(255),password VARCHAR(255),dbname VARCHAR(255))ENGINE = InnoDB",
+	'project-db':
+		"	CREATE TABLE IF NOT EXISTS "+
+		"	replecon.projectDB("+
+		"	id INT AUTO_INCREMENT PRIMARY KEY NOT NULL," +
+		"	projectID INT(4) NOT NULL,  "+
+		"	flag BOOLEAN NOT NULL,"+
+		"	sshhID INT(4),"+
+		"	dbhID INT(4) ,"+
+		"	FOREIGN KEY (projectID) REFERENCES replecon.project(id),"+
+		"	FOREIGN KEY (sshhID) REFERENCES replecon.sshhost(id),"+
+		"	FOREIGN KEY (dbhID) REFERENCES replecon.dbhost(id),"+
+		"	UNIQUE(projectID)"+
+		"	)ENGINE = InnoDB;",
+
+	'project-db-sshhost':
+		"	CREATE TABLE IF NOT EXISTS "+
+		"	replecon.sshhost("+
+		"	id INT AUTO_INCREMENT PRIMARY KEY NOT NULL," +
+		"	host VARCHAR(20) NOT NULL,"+
+		"	port int(5)  DEFAULT null,"+
+		"	user VARCHAR(20) NOT NULL,"+
+		"	password VARCHAR(20) NOT NULL"+
+		"	)ENGINE = InnoDB;",
+
+	'project-db-dbhost':
+		"	CREATE TABLE IF NOT EXISTS "+
+		"	replecon.dbhost("+
+		"	id INT AUTO_INCREMENT PRIMARY KEY NOT NULL, "+
+		"	host VARCHAR(20) NOT NULL,"+
+		"	port int(5)  DEFAULT null,"+
+		"	user VARCHAR(20) NOT NULL,"+
+		"	password VARCHAR(20) NOT NULL,"+
+		"	name VARCHAR(20) NOT NULL"+
+		"	)ENGINE = InnoDB;",
+
+	'project-project-log':
+		"	CREATE TABLE IF NOT EXISTS "+
+		"	replecon.projectLog ("+
+		"	id INT AUTO_INCREMENT PRIMARY KEY NOT NULL," +
+		"	projectID INT(4) NOT NULL,  "+
+		"	type varchar(10),"+
+		"	date DATETIME NOT NULL,"+
+		"	FOREIGN KEY (projectID) REFERENCES replecon.project(id)"+
+		"	)ENGINE = InnoDB;",
+
 	'template-key': 		"CREATE TABLE IF NOT EXISTS replecon.templateKey(id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255),val VARCHAR(255),tmplID int(4) NOT NULL,FOREIGN KEY (tmplID) REFERENCES replecon.template(id))ENGINE = InnoDB",
 	'template-condition': 	"CREATE TABLE IF NOT EXISTS replecon.templateCondition(id INT AUTO_INCREMENT PRIMARY KEY, tagID int(4) NOT NULL,tmplKeyID int(4) NOT NULL,positive BOOLEAN NOT NULL,FOREIGN KEY (tagID) REFERENCES replecon.tag(id),FOREIGN KEY (tmplKeyID) REFERENCES replecon.templateKey(id))ENGINE = InnoDB",
 	// 'tag-template': 'CREATE TABLE IF NOT EXISTS replecon.tagTemplates (id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255), val VARCHAR(600), flag INT(4) )ENGINE = InnoDB',
@@ -45,6 +89,11 @@ var queries = {
 
 			+ " DataKey1 INT(5) ,  "
 			+ " DataKey2 INT(5) , "
+
+			+ " DataDate1 DATETIME , "
+			+ " DataDate2 DATETIME , "
+			+ " DataDate3 DATETIME , "
+			+ " DataDate4 DATETIME , "
 
 			+ " DataLink1 VARCHAR(300) , "
 			+ " DataLink2 VARCHAR(350) , "

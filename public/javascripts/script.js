@@ -98,46 +98,46 @@ function tmplForm (e) {
     xhr.send(JSON.stringify(data));
     return false;
 }
-function newprojProjForm(e) {
-    if (e.preventDefault) e.preventDefault();
-    console.log(e);
+// function newprojProjForm(e) {
+//     if (e.preventDefault) e.preventDefault();
+//     console.log(e);
 
-    var project_name = document.getElementById('name-input').value;
-    if(!project_name)
-        return false;
-    var project_description = document.getElementById('description-textarea').value;
-    var assoc_tags = $('#assoc-tag').val();
-    var stop_tags = $('#stop-tag').val();
+//     var project_name = document.getElementById('name-input').value;
+//     if(!project_name)
+//         return false;
+//     var project_description = document.getElementById('description-textarea').value;
+//     var assoc_tags = $('#assoc-tag').val();
+//     var stop_tags = $('#stop-tag').val();
 
-    var data = {};
-    data.name = project_name;
+//     var data = {};
+//     data.name = project_name;
     
-    if(project_description)
-        data.description = project_description;
+//     if(project_description)
+//         data.description = project_description;
 
-    data.tags = {};
-    if(assoc_tags)
-        data.tags.assoc = assoc_tags;
-    if(stop_tags)
-        data.tags.stop = stop_tags;
+//     data.tags = {};
+//     if(assoc_tags)
+//         data.tags.assoc = assoc_tags;
+//     if(stop_tags)
+//         data.tags.stop = stop_tags;
 
-    console.log(project_name);    
-    console.log(project_description);    
-    console.log(assoc_tags);    
-    console.log(stop_tags);   
+//     console.log(project_name);    
+//     console.log(project_description);    
+//     console.log(assoc_tags);    
+//     console.log(stop_tags);   
 
-    var xhr = new XMLHttpRequest();
+//     var xhr = new XMLHttpRequest();
 
-    xhr.open("POST", '/newproject', true);
-    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-    xhr.onreadystatechange = function (){
-        console.log(xhr);
-        if(xhr.readyState == 4)
-            window.location.replace(xhr.responseURL);
-    };
-    xhr.send(JSON.stringify(data));
-    return false;
-}
+//     xhr.open("POST", '/newproject', true);
+//     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+//     xhr.onreadystatechange = function (){
+//         console.log(xhr);
+//         if(xhr.readyState == 4)
+//             window.location.replace(xhr.responseURL);
+//     };
+//     xhr.send(JSON.stringify(data));
+//     return false;
+// }
 // function projsForm(e) {
 //     if (e.preventDefault) e.preventDefault();
 //     var x = e.target.getElementsByTagName("input")[0];
@@ -168,17 +168,7 @@ function tagForm(e) {
     var name = x.value;
     var data = {name:name, syns:syns, type:'save'};
 
-    // ajax('/query', data, (result)=>{
-    //     console.log(result);
-
-    //     var output = '';
-    //     for(var i=0; i<result.length; i++){
-    //         output += JSON.stringify(result[i], null, 4);
-    //     }
-    //     $('#response-textarea').val(output);
-    // });
-    // /////////////////////////////////////////////////////////////
-    var body = 'name=' + encodeURIComponent(name)
+   var body = 'name=' + encodeURIComponent(name)
         // +"&syns=" + encodeURIComponent(syns)
         +"&syns=" + syns
         +'&type=save';
@@ -195,25 +185,6 @@ function tagForm(e) {
     // xhr.send( JSON.stringify({name:name, syns:syns, type:'save'}) );
     return false;
 }
-// function keyForm(e) {
-//     if (e.preventDefault) e.preventDefault();
-
-//     var x = e.target.getElementsByTagName("input")[0];
-//     var name = x.value;
-//     var body = 'name=' + encodeURIComponent(name);
-//     var xhr = new XMLHttpRequest();
-
-//     xhr.open("POST", '/keywords', true);
-//     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-//     xhr.onreadystatechange = function (){
-//         console.log(xhr);
-//         if(xhr.readyState == 4)
-//             window.location.replace(xhr.responseURL);
-//     };
-//     xhr.send(body);
-
-//     return false;
-// }
 
 
 function onReaderLoad(e){
@@ -369,63 +340,13 @@ function queryForm(e) {
         $('#response-textarea').val(output);
     });
 }
-// function search(url){
-//     // var search = document.getElementById('search');
-//     console.log('search engine');
-//     if( $('#search') ){
-//         $('#search').on('keyup', ()=>{
-//             console.log('search typing...');
 
-//             var val = $('#search').val();
-
-//             if( val.length > 0 ){
-
-//                 $("#list-tbody").hide();
-
-//                 ajax(url, {type:'search',name:val}, (items)=>{
-//                     console.log(items);
-//                     var html = '';
-//                     for(var i in items){
-//                         console.log(items[i]);
-//                         html += ''
-//                         + "<tr>"
-//                         + "<td class='number'>" 
-//                         + items[i].id 
-//                         + "</td>"
-//                         + "<td>"
-//                         + "<a href='"+ url +"/"+ items[i].id  +"'>"
-//                         + items[i].name
-//                         + "</a>"
-//                         + "</td>"
-//                         + "<td></td>"
-//                         + "</tr>";
-//                     }  
-//                     $("#search-tbody").empty().append(html).show();        
-//                 });
-//             }else{
-//                 $("#list-tbody").show();
-//                 $("#search-tbody").hide();
-//             }
-//         });
-//     }
-// }
 function ajax(url, data, callback){
     return $.ajax({
       type: "POST"
       ,url: url
       ,data: data
       ,dataType: 'json'
-      ,success: function(response){
-        if(callback)
-            callback(response);
-      },
-    });
-}
-function ajax2(url, data, callback){
-    return $.ajax({
-      type: "POST"
-      ,url: url
-      ,data: "data="+JSON.stringify(data) 
       ,success: function(response){
         if(callback)
             callback(response);

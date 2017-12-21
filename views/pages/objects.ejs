@@ -3,8 +3,10 @@
 <head>
   <% include ../partials/header.ejs %>
 </head>
-<body>
+<body class='side-pad'>
   <% include ../partials/topnav.ejs %>
+  <% include ../partials/leftnav.ejs %>
+  
   <div class="container">
   	<h1>Object List Page</h1>
   	<h3>Data length: <%=scope.size%></h3>

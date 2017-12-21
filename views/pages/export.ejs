@@ -3,59 +3,68 @@
 <head>
   <% include ../partials/header.ejs %>
 </head>
-<body>
+<body class='side-pad'>
   <% include ../partials/topnav.ejs %>
+  <% include ../partials/leftnav.ejs %>
+
   <div class="container">
   	<h1>Export Page</h1>
-  	<h3>Data length: <%=scope.size%></h3>
   	<hr>
   </div>
 
+  <% if( scope.db ){ %>
   <section id="export-body" class='col-md-offset-1 col-md-10'>
-  	<div class="action-board col-md-8"></div>
+  	<div class="action-board col-md-8">
+  		<div class="export-field">
+	  		<h4><span class='unmmaped objs'><%=scope.objs.length%></span> new objects </h4>
+  			<button class='btn btn-warning push' id='export-push'>push</button>
+  		</div>
+  		<hr>
+  		<h3>Export history:</h3>
+  		<ul class='export-history'>
+  			
+  		</ul>
+  	</div>
+
   	<div class="info-table col-md-4">
   		<h3>Time Line</h3>
   		<div class="overflow-wrapper">
 	  		<table>
 	  			<tbody>
-					<tr>
-						<td>
-							<h5>export</h5>
-							<p class='items'>180 objects</p>
-							<p class='date'>29.12.2017 <span class='time'>12:02:23</span></p>
-							<hr>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<h5>update</h5>
-							<p class='items'>-20 objects</p>
-							<p class='date'>29.12.2017 <span class='time'>12:02:23</span></p>
-							<hr>
-						</td>
-						
-					</tr>
-					<tr>
-						<td>
-							<h5>import</h5>
-							<p class='items'>100 objects</p>
-							<p class='date'>29.12.2017 <span class='time'>12:02:23</span></p>
-							<hr>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<h5>import</h5>
-							<p class='items'>100 objects</p>
-							<p class='date'>29.12.2017 <span class='time'>11:02:23</span></p>
-							<hr>
-						</td>
-					</tr>
+	  				<% scope.logs.reverse().forEach(function(log, iter) { %>
+						<tr>
+							<td>
+								<h5><%=log.type%></h5>
+								<p class='items'><%=log.length%></p>
+								<p class='date'><%=log.date%></p>
+								<hr>
+							</td>
+						</tr>
+	  				<% }); %>
 	  			</tbody>
 	  		</table>
   		</div>
 
   	</div>
   </section>
+  <% }else{ %>
+  	<div class="container">
+  		<span class='error'>no database credentials</span>
+  	</div>  	
+  <% } %>
 </body>
+<script>
+var project_id = <%=scope.project.id%>;
+	$(function(){
+		$("#export-push").on('click', ()=>{
+			console.log("push");
+			data = {type: "project.export.push"}
+		    ajax('/project/'+project_id+'/export/', data, (result)=>{
+		        console.log(result);
+	    	});
+		});
+
+	});
+
+</script>
 </html>

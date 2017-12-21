@@ -1,10 +1,13 @@
 /////////////////////////////////////////////
 const fs 		= require('fs');
+
 const MYSQL 	= require('./mysql').connection;
 const MYSQL_SSH	= require('./mysql').sshcon;
 const ASYNSQL 	= require('./mysql').asynccon;
-// const sqlPool = require('./mysql').pool;
+const CHILDCON 	= require('./mysql').childcon;
+
 const PythonShell = require('python-shell');
+
 PythonShell.defaultOptions = {
     scriptPath: './modules/py/',
   	mode: 'text',
@@ -115,6 +118,10 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 		if(size>originalIDarr.length)
 			size = originalIDarr.length;
 
+		console.log(" < logID > ");
+		var logID = await createObjectLog(projectID);
+		console.log(logID);
+
 		for(var j=0; j<size; j++){
 			var originalID = originalIDarr[j].originalID;
 
@@ -124,6 +131,10 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				let video_link = original.video;
 				console.log(' < video_link >');
 				console.log(video_link);
+
+				let donor_link = original.link;
+				console.log(' < donor_link >');
+				console.log(donor_link);
 
 				let originalTags = await selectOriginalTags(connection, originalID);
 				let synTags = [];
@@ -161,8 +172,9 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				console.log(' < title >');
 				console.log(title);
 
-				
-				let objID = await createObject(projectID,originalID,title, description, video_link);
+				console.log(' < createObject >');
+				let objID = await createObject(projectID,originalID,title, description, video_link,donor_link,logID);
+				console.log(' < createRelationTagObj >');
 				await createRelationTagObj(objID, originalTags);
 			});
 		}
@@ -201,14 +213,31 @@ async function createRelationTagObj(objID, tags){
 		return 0;
 	}	
 }
-async function createObject(projectID,originalID,title, description, link){
+async function createObjectLog(projectID ){
 	try {
+		var type = 'import'
+		var query = ""
+				+ " Insert Into"
+				+ " projectLog "
+				+ " (projectID, type, date)"
+				+ " values (?,?,NOW())";
+		var log = await myquery(query, [ projectID, type ]);
+		return log.insertId;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}	
+}
+async function createObject(projectID,originalID,title, description, videolink, donorlink, logID){
+	try {
+		console.log([projectID,originalID,title, description, videolink, donorlink, logID]);
 		var query = ""
 				+ " Insert Into"
 				+ " object "
-				+ " (DataTitle1, DataLink1, DataText1, FootPrint1)"
-				+ " values (?,?,?,?)";
-		let object = await myquery(query, [ title,link,description,originalID ]);
+				+ " (DataTitle1, DataLink1, DataText1, FootPrint1, DataLink2, DataKey1)"
+				+ " values (?,?,?,?,?,?)";
+		let object = await myquery(query, 
+			[ title, videolink, description, originalID, donorlink, logID ]);
 		console.log(object);
 		let objectID = object.insertId;
 
@@ -275,8 +304,78 @@ async function selectProjectDescriptionTemplate (projectID,tags, callback)  {
 			+ " SELECT *"
 			+ " FROM templateKey"
 			+ " WHERE tmplID = ?";
-		let result = await myquery(query, [ tmplID ]);
-		console.log(result);
+		let keys = await myquery(query, [ tmplID ]);
+		console.log(keys);
+
+// ----------------------------------------------------
+
+		console.log(tags);
+		let tagIDs = [];
+		for(var i=0; i<tags.length; i++){
+			tagIDs.push(tags[i].id);
+		}
+		console.log(" < tagIDs >");
+		console.log(tagIDs);
+
+		query = ""
+			+ " SELECT *"
+			+ " FROM templateCondition"
+			+ " WHERE tmplKeyID in "
+			+ " ("
+			+ " 	SELECT id "
+			+ " 	FROM replecon.templateKey"
+			+ " 	WHERE tmplID = ?"
+			+ " )";
+		let condition = await myquery(query, [ tmplID ]);
+		console.log(" < tmpl condition >");
+		console.log(condition);
+
+		var result = [];
+		if(!condition)
+			result = keys;
+		else{
+			var n_condition = [],
+				p_condition = [];
+			for(var i=0; i<condition.length; i++){
+				if(condition[i].positive)
+					p_condition.push(condition[i]);
+				else
+					n_condition.push(condition[i]);
+			}
+			console.log(" < p_condition >");
+			console.log(p_condition);
+			console.log(" < n_condition >");
+			console.log(n_condition);
+			
+
+			console.log(" < tmpl condition check >");
+			for(var i=0; i<keys.length; i++){
+				var bool = true;
+
+				for(var j=0; j<p_condition.length; j++){
+					if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
+
+						bool = false;
+						if( tagIDs.indexOf(p_condition[j].tagID) ){
+							bool = true;
+							break;
+						} 
+					}
+				}
+
+				for(var j=0; j<n_condition.length; j++){
+					if( n_condition[j].tmplKeyID == keys[i].id ){
+
+						bool = true;
+						if( tagIDs.indexOf(n_condition[j].tagID) ){
+							bool = false;
+							break;
+						} 
+					}
+				}
+				if( bool ) result.push(keys[i]);
+			}
+		}
 
 		if(callback)
 			await callback(result);
@@ -535,6 +634,148 @@ module.exports.selectProjectObjects = async (projectID, callback) => {
 	} catch (e) {
 		console.log(e);
 		return 0;
+	}
+}
+module.exports.selectProjectUnmappedObjects = async (projectID, callback) => {
+	try {
+		var query = ""
+				+	" SELECT *" 
+				+	" FROM replecon.object"
+				+	" WHERE id in"
+				+	" (SELECT objectID"
+				+	" FROM replecon.relationProjectObject"
+				+	" WHERE projectID = ?)"
+				+	" AND DataFlag1 IS NULL"
+				+	" AND DataFlag2 IS NULL";
+		let result = await myquery(query, [ projectID ]);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function selectProjectUnmappedObjects(projectID, callback) {
+	try {
+		var query = ""
+				+	" SELECT *" 
+				+	" FROM replecon.object"
+				+	" WHERE id in"
+				+	" (SELECT objectID"
+				+	" FROM replecon.relationProjectObject"
+				+	" WHERE projectID = ?)"
+				+	" AND DataFlag1 IS NULL"
+				+	" AND DataFlag2 IS NULL";
+		let result = await myquery(query, [ projectID ]);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.selectProjectLogs = async (projectID, callback) => {
+	try {
+		var query = ""
+				// +	" SELECT *" 
+				// +	" FROM exportLog"
+				// +	" WHERE projectID = ?";
+				+	"	select "
+				+	"	l.projectID, l.type, l.date, l.id, count(o.id) as `length`"
+				+	"	from replecon.projectLog l"
+				+	"	left join replecon.object as o"
+				+	"	on o.DataKey1 = l.id"
+				+	"	where projectID = ?"
+				+	"	group by l.id";
+		let result = await myquery(query, [ projectID ]);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.exportObjects = async (projectID, db_params, callback) => {
+	try {
+		const connection = await CHILDCON(db_params); // !
+
+		var query = ""
+				+	" INSERT INTO wp_posts("
+
+				+	" post_author, "
+				+	" post_status, "
+				+	" comment_status, "
+				+	" ping_status, "
+
+				+	" menu_order, "
+				+	" post_type, "
+				+	" comment_count,"
+				+	" post_parent,"
+
+				+	" post_date, "
+				+	" post_date_gmt, "
+				+	" post_modified, "
+				+	" post_modified_gmt, "
+
+				+	" post_content,"
+				+	" post_title, "
+				+	" post_name, "
+				+	" guid, " 
+
+				+	" to_ping,"
+				+	" post_excerpt,"
+				+	" pinged,"
+				+	" post_content_filtered,"
+				+	" post_password "
+				+	" ) VALUES ("
+				+	" '1','publish','open','open', "
+				+	" '0', 'post', '0', '0', " 
+				+	" (now() - INTERVAL ? MINUTE),"//date
+				+	" (now() - INTERVAL ? MINUTE),"//date
+				+	" (now() - INTERVAL ? MINUTE),"//date
+				+	" (now() - INTERVAL ? MINUTE),"//date
+				+	" ?," //'descr'
+				+	" ?, "//'title'
+				+	" ?,"//'convert title'
+				+	" ?, "//link
+				+	" '','','','','' "
+				+	" ) ";
+
+		var objs = await selectProjectUnmappedObjects(projectID);
+		console.log(objs);
+
+		for(var i=0; i<objs.length; i++){
+			let result = await connection.execute( query, 
+			[
+				(5*i+i),
+				(5*i+i),
+				(5*i+i),
+				(5*i+i),
+				objs[i].DataText1,
+				objs[i].DataTitle1,
+				objs[i].DataTitle1.replace(/\s/g, '_'),
+				"no link"
+			] ); // !
+		}
+		// connection.end();
+		result = '';
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return ;
 	}
 }
 /////////////////////////////////////////////
@@ -1259,8 +1500,8 @@ module.exports.selectProject = async (id, callback) => {
 		let result = await myquery(query, [id]);
 
 		if(callback)
-			await callback(result);
-		return result;
+			await callback(result[0]);
+		return result[0];
 
 	} catch (e) {
 		console.log(e);
@@ -1391,6 +1632,156 @@ module.exports.selectProjectSize = async (id, callback) => {
 		let size = await myquery(query, [id]);
 		let result = size[0]['count(*)'];
 
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.selectProjectDB = async (id, callback) => {
+	try {		
+		let query = "SELECT * FROM projectDB WHERE projectID = ?";
+		let projectDB = await myquery(query, [id]);
+		let result = projectDB[0];
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+
+module.exports.selectProjectDBlocalhost = async (id, callback) => {
+	try {		
+		let query = "SELECT * FROM dbhost WHERE id = ?";
+		let localhost = await myquery(query, [id]);
+		let result = localhost[0];
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.selectProjectDBsshhost = async (id, callback) => {
+	try {		
+		let query = "SELECT * FROM sshhost WHERE id = ?";
+		let sshhost = await myquery(query, [id]);
+		let result = sshhost[0];
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.saveProjectDB = async (projID, pack, callback) => {
+	try {		
+		let query = "SELECT * FROM projectDB WHERE projectID = ?";
+		let projectDB = await myquery(query, [projID]);
+			console.log(17);
+		console.log(projectDB);
+			console.log(16);
+		// if()
+
+		if(!projectDB || projectDB.length == 0){
+			console.log(15);
+			query = "INSERT INTO projectDB (projectID, flag) VALUES (?,?)";
+			let flag = ( pack.db_type == 'localhost' ) ? 0 : 1;
+
+			console.log(14);
+			projectDB = await myquery(query, [projID, flag]);
+			let pdbID = projectDB.insertId;
+
+			console.log(13);
+			if(!flag){
+				console.log(12);
+				query = "INSERT INTO dbhost (host, user, password, name) VALUES (?,?,?,?)";
+				
+				let host = pack.db_adr,
+					user = pack.db_usr,
+					password = pack.db_pass,
+					name = pack.db_name;
+				if( !host || !user || !password || !name) return;
+
+				let dbhost = await myquery(query, [host, user, password, name]);
+				let dbhID = dbhost.insertId;
+
+				query = "UPDATE projectDB SET dbhID = ? WHERE projectID = ?";
+				let updatePDB = await myquery(query, [dbhID, projID]);
+			}else{
+			console.log(11);
+
+				let l_host = pack.db_adr,
+					l_port = pack.db_port,
+					l_user = pack.db_usr,
+					l_password = pack.db_pass,
+					l_name = pack.db_name;
+
+				let f_host = pack.host_adr
+					f_port = pack.host_port,
+					f_user = pack.host_usr,
+					f_password =pack.host_pass;
+
+				let f_options = [],
+					l_options = [];
+
+				if( !l_host || !l_user || !l_password || !l_name ) return;
+				if( !f_host || !f_user || !f_password ) return;
+
+			console.log(10);
+				/* foreign ssh host */
+				if(f_port){
+			console.log(9);
+					query = "INSERT INTO sshhost (host, port, user, password) VALUES (?,?,?,?)";
+					f_options = [f_host, f_port, f_user, f_password];				
+				}else{
+			console.log(8);
+					query = "INSERT INTO sshhost (host, user, password) VALUES (?,?,?)";
+					f_options = [f_host, f_user, f_password];
+				}
+			console.log(7);
+				let sshhost = await myquery(query, f_options);
+				let sshhID = sshhost.insertId;
+
+			console.log(6);
+				/* local db host */
+				if(l_port){
+			console.log(5);
+					query = "INSERT INTO dbhost (host, port, user, password, name) VALUES (?,?,?,?,?)";
+					let l_options = [l_host, l_port, l_user, l_password, l_name];
+				}else{
+			console.log(4);
+					query = "INSERT INTO dbhost (host, user, password, name) VALUES (?,?,?,?)";
+					let l_options = [l_host, l_user, l_password, l_name];
+				}
+			console.log(3);
+				let dbhost = await myquery(query, l_options);
+				let dbhID = dbhost.insertId;
+
+			console.log(2);
+				/* project DB config */
+				query = "UPDATE projectDB SET dbhID = ?, sshhID = ? WHERE projectID = ?";
+				let updatePDB = await myquery(query, [dbhID, sshhID, projID]);
+
+			console.log(1);
+			}
+		}
+			console.log(0);
+
+		result = null;
 		if(callback)
 			await callback(result);
 		return result;

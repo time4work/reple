@@ -614,18 +614,70 @@ section#export-body .info-table {
     /*outline: 1px solid rgba(139, 69, 19, 0.16);*/
     text-align: center; 
 }
+section#project-database .foreignhost-body{
+    position: relative;
+}
+section#project-database .foreignhost-body.off:after {
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: '';
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    background: rgba(228, 243, 243, 0.77);
+}
+section#project-database .foreignhost-body.off span.label-title {
+    color: #d8eafb;
+    background: white;
+}
+section#project-database div#p-host-body > p {
+    width: 50%;
+    float: left;
+}
+
+section#project-database div#p-host-body {
+    clear: both;
+    overflow: hidden;
+}
+body.side-pad {
+    padding: 40px 70px;
+}
 section#export-body .info-table h5 {
     letter-spacing: 4px;
     background: aliceblue;
 }
+#project-database .details-body input.radio {
+    font-size: 10px;
+    height: 11px;
+}
+#project-database .details-body label.radio {
+    text-align: center;
+    margin: 5px;
+    cursor: pointer;
+}
+#project-database .details-body label.radio:hover {
+    text-decoration: underline;
+}
+.export-field > * {
+    height: 40px;
+    min-width: 170px;
+}
+section#export-body span.unmmaped.objs {
+    color: rgb(251, 92, 26);
+    font-weight: bold;
+}
 section#export-body .info-table div.overflow-wrapper{
-    height: 50vh;
+    height: calc( 100vh - 250px);
     overflow: auto;
     outline: 1px solid rgba(139, 69, 19, 0.16);
 }
 section#export-body .info-table p.items {
     text-transform: lowercase;
     color: cadetblue;
+}
+button.btn.btn-warning {
+    color: black;
 }
 .info-table table {
     width: 100%;
@@ -638,7 +690,7 @@ section#project-left-menu {
     position: fixed;
     top: 39px;
     left: 0;
-    height: calc( 100vh - 90px );
+    height: calc( 100vh - 70px );
     padding-right: 5px;
     padding-left: 5px;
     border-right: 1px solid rgb(197, 197, 197);

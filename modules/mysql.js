@@ -20,6 +20,15 @@ module.exports.asynccon = async function(){
 		database : process.env.DB_DATABASE 	|| 'replecon'
 	});
 };
+module.exports.childcon = function(params){
+	const  mysql = require('mysql2');
+	return mysql.createConnection({
+		host     : params.host 		|| 'localhost',
+		user     : params.user 		|| 'test',
+		password : params.password 	|| 'test',
+		database : params.database 	|| 'wpchild'
+	});
+};
 /////////////////////////////////////////////
 module.exports.sshcon = function(params){
 	const mysql = require('mysql-ssh');

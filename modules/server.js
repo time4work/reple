@@ -72,8 +72,8 @@ module.exports = function(params){
 					await helpers.selectProjectSize(project_id, async (result4) => {
 						await helpers.selectTmpls( async (result5)=>{
 							await helpers.selectProjectTmpls(project_id, async (result6)=>{
-								console.log( { project:result[0], tags:result2, tagRelation: result3, size: result4, tmpls: result5 , tmplRelation: result6});
-								response.render('pages/project',{ scope : { project:result[0], tags:result2, tagRelation: result3, size: result4, tmpls: result5 , tmplRelation: result6} } );
+								console.log( { project:result, tags:result2, tagRelation: result3, size: result4, tmpls: result5 , tmplRelation: result6});
+								response.render('pages/project',{ scope : { project:result, tags:result2, tagRelation: result3, size: result4, tmpls: result5 , tmplRelation: result6} } );
 							});
 						});
 						
@@ -127,20 +127,88 @@ module.exports = function(params){
 	});
 
 
-	app.get('/project/:id/objectlist', async (request, response)=>{ 
+	app.get('/project/:id/objects', async (request, response)=>{ 
 		let project_id = request.params.id;
-		await helpers.selectProjectSize(project_id, async (result) => {
-			await helpers.selectProjectObjects(project_id, async (result2) => {
-				response.render('pages/data', {scope: {size:result, array:result2} });
+		await helpers.selectProject(project_id, async (result) => {
+			await helpers.selectProjectSize(project_id, async (result2) => {
+				await helpers.selectProjectObjects(project_id, async (result3) => {
+					response.render('pages/objects', {scope: {project: result, size:result2, array:result3} });
+				});
 			});
 		});
+
 	});
 
 	app.get('/project/:id/export', async (request, response)=>{ 
 		let project_id = request.params.id;
-		await helpers.selectProjectSize(project_id, async (result) => {
-			response.render('pages/export',{scope: {size:result}});
-		});		
+		await helpers.selectProject(project_id, async (result) => {
+			await helpers.selectProjectDB(project_id, async (result2) => {
+				await helpers.selectProjectLogs(project_id, async (result3) => {
+					await helpers.selectProjectUnmappedObjects(project_id, async(result4)=>{
+						response.render('pages/export',{scope: {project: result, db: result2, logs: result3, objs: result4}});
+					});
+				});
+			});	
+		});	
+	});
+	app.post('/project/:id/export', async (request, response)=>{ 
+		let project_id = request.params.id;
+		
+		await helpers.selectProjectDB(project_id, async (projectDB) => {
+			console.log(projectDB);
+
+			if(projectDB.flag == 0){
+				await helpers.selectProjectDBlocalhost(projectDB.dbhID, async(db_params)=>{
+					console.log(db_params);
+					
+					await helpers.exportObjects(project_id, db_params, async (result)=>{
+						console.log(result);
+						response.send("ok");
+					});
+				});
+			}else{}
+		});
+	});
+
+	app.get('/project/:id/database', async (request, response)=>{ 
+		let project_id = request.params.id;
+		await helpers.selectProject(project_id, async (result) => {
+			await helpers.selectProjectDB(project_id, async (result2) => {
+				if(!result2){
+					result2 = [];
+					response.render('pages/db',{scope: {project: result ,db:result2}});
+				}else{
+					await helpers.selectProjectDBlocalhost(result2.dbhID, async(result3)=>{
+						if(result2.sshhID){
+							await helpers.selectProjectDBsshhost(result2.sshhID, async (result4)=>{
+								response.render('pages/db',{scope: {project: result ,db:result2, dbhost: result3, ssh: result4}});
+							});
+						}else{
+							response.render('pages/db',{scope: {project: result ,db:result2, dbhost: result3}});
+						}
+					});
+				}
+			});		
+		});
+	});
+	app.post('/project/:id/database', async (request, response) => {
+		let project_id = request.params.id;
+		let pack =  request.body.pack;
+		console.log(pack);
+		switch(pack.db_type){
+			case "localhost":
+				await helpers.saveProjectDB(project_id,pack, () => {
+					response.send("ok");
+				});
+				// break;
+			case "foreignhost":
+				// await helpers.createTmpl(name, (result) => {
+				// 	response.redirect('/templates');
+				// });
+				// break;
+			default:
+				response.send("oops");
+		}
 	});
 
 	app.get('/templates', async (request, response) => {
@@ -362,7 +430,6 @@ module.exports = function(params){
 		}
 		console.log(' < generator >');
 	});
-
 
 
 	app.get('/query', async (request, response) => {
