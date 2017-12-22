@@ -103,7 +103,7 @@
               </div>
 
               <div class="main-butt-forth">
-                <input class="btn btn-danger" type="button" value="DELETE">
+                <input class="btn btn-danger" id='delete-btn' type="button" value="DELETE">
                 <input class="btn btn-success" type="submit" value="SAVE">
               </div>
             </form>
@@ -194,6 +194,22 @@
         $('#d-tmpls').tagsinput('add', {"id":tag_id, "label":tag_name} );
       });
 
+      $('#delete-btn').on('click', function(e){
+        if(!confirm("are you sure? It can break a lot of conditions"))
+          return;
+        
+        var data = {};
+        data.type = 'project.delete';
+          ajax('/project/'+<%=scope.project.id%>, data, (_data, textStatus)=>{
+            console.log(_data);
+              if (_data.redirect) {
+                  window.location.href = _data.redirect;
+              }
+              else {
+                  console.log('oops');
+              }
+            });
+        });
     });
 
     </script>

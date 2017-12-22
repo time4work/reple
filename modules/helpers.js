@@ -8,6 +8,8 @@ const CHILDCON 	= require('./mysql').childcon;
 
 const PythonShell = require('python-shell');
 
+const punctREGEX = /[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g;
+
 PythonShell.defaultOptions = {
     scriptPath: './modules/py/',
   	mode: 'text',
@@ -323,7 +325,7 @@ async function selectProjectDescriptionTemplate (projectID,tags, callback)  {
 			+ " WHERE tmplKeyID in "
 			+ " ("
 			+ " 	SELECT id "
-			+ " 	FROM replecon.templateKey"
+			+ " 	FROM templateKey"
 			+ " 	WHERE tmplID = ?"
 			+ " )";
 		let condition = await myquery(query, [ tmplID ]);
@@ -423,7 +425,7 @@ async function selectProjectTitleTemplate (projectID, tags, callback)  {
 			+ " WHERE tmplKeyID in "
 			+ " ("
 			+ " 	SELECT id "
-			+ " 	FROM replecon.templateKey"
+			+ " 	FROM templateKey"
 			+ " 	WHERE tmplID = ?"
 			+ " )";
 		let condition = await myquery(query, [ tmplID ]);
@@ -522,11 +524,11 @@ async function selectProjectTitleTemplate (projectID, tags, callback)  {
 	try {
 		var query = ""
 			+ " SELECT *"
-			+ " FROM replecon.tagTemplates"
+			+ " FROM tagTemplates"
 			+ " WHERE flag ="
 			+ " ("
 			+ " SELECT flag"
-			+ " FROM replecon.tag"
+			+ " FROM tag"
 			+ " WHERE id = ?"
 			+ " )"
 		let result = await myquery(query, [ tagID ]);
@@ -584,7 +586,7 @@ async function findFilteredOriginal(connection, projectID, tagIDs){
 		query += ""
 			+	"AND originalID not in ("
 			+	"select originalID "
-			+	"from replecon.relationProjectOriginal "
+			+	"from relationProjectOriginal "
 			+	"where projectID = "+projectID
 			+	")";
 		query += "GROUP BY originalID";
@@ -620,10 +622,10 @@ module.exports.selectProjectObjects = async (projectID, callback) => {
 	try {
 		var query = ""
 				+	" SELECT *" 
-				+	" FROM replecon.object"
+				+	" FROM object"
 				+	" WHERE id in"
 				+	" (SELECT objectID"
-				+	" FROM replecon.relationProjectObject"
+				+	" FROM relationProjectObject"
 				+	" WHERE projectID = ?)";
 		let result = await myquery(query, [ projectID ]);
 
@@ -640,10 +642,10 @@ module.exports.selectProjectUnmappedObjects = async (projectID, callback) => {
 	try {
 		var query = ""
 				+	" SELECT *" 
-				+	" FROM replecon.object"
+				+	" FROM object"
 				+	" WHERE id in"
 				+	" (SELECT objectID"
-				+	" FROM replecon.relationProjectObject"
+				+	" FROM relationProjectObject"
 				+	" WHERE projectID = ?)"
 				+	" AND DataFlag1 IS NULL"
 				+	" AND DataFlag2 IS NULL";
@@ -662,10 +664,10 @@ async function selectProjectUnmappedObjects(projectID, callback) {
 	try {
 		var query = ""
 				+	" SELECT *" 
-				+	" FROM replecon.object"
+				+	" FROM object"
 				+	" WHERE id in"
 				+	" (SELECT objectID"
-				+	" FROM replecon.relationProjectObject"
+				+	" FROM relationProjectObject"
 				+	" WHERE projectID = ?)"
 				+	" AND DataFlag1 IS NULL"
 				+	" AND DataFlag2 IS NULL";
@@ -688,8 +690,8 @@ module.exports.selectProjectLogs = async (projectID, callback) => {
 				// +	" WHERE projectID = ?";
 				+	"	select "
 				+	"	l.projectID, l.type, l.date, l.id, count(o.id) as `length`"
-				+	"	from replecon.projectLog l"
-				+	"	left join replecon.object as o"
+				+	"	from projectLog l"
+				+	"	left join object as o"
 				+	"	on o.DataKey1 = l.id"
 				+	"	where projectID = ?"
 				+	"	group by l.id";
@@ -750,12 +752,24 @@ module.exports.exportObjects = async (projectID, db_params, callback) => {
 				+	" ?, "//link
 				+	" '','','','','' "
 				+	" ) ";
+		var query2 = ""
+				+	" UPDATE object SET "
+				+	" DataFlag1=1, "
+				+	" DataKey2=? "
+				+	" WHERE id=? ";
 
+
+		console.log(" < objs > ");
 		var objs = await selectProjectUnmappedObjects(projectID);
 		console.log(objs);
 
+		if(objs.length == 0) return;
+
+
+
+
 		for(var i=0; i<objs.length; i++){
-			let result = await connection.execute( query, 
+			let objResult = await connection.execute( query, 
 			[
 				(5*i+i),
 				(5*i+i),
@@ -763,11 +777,74 @@ module.exports.exportObjects = async (projectID, db_params, callback) => {
 				(5*i+i),
 				objs[i].DataText1,
 				objs[i].DataTitle1,
-				objs[i].DataTitle1.replace(/\s/g, '_'),
+				objs[i].DataTitle1
+					.toLowerCase()
+					.replace(punctREGEX, '')
+					.replace(/(^\s*)|(\s*)$/g, '')
+					.replace(/\s+/g,'-'),
 				"no link"
 			] ); // !
+			console.log(" < objResult > ");
+			console.log(objResult[0]);
+			
+			let tag_query = "select term_id from wp_terms where name = ?";
+			
+			let new_tag_query = "insert into wp_terms"
+			+ " (name, slug, term_group) "
+			+ " VALUES (?, ?, 0) ";
+			
+			let relation_query = "insert into wp_term_relationships"
+			+ " (object_id, term_taxonomy_id, term_order) "
+			+ " VALUES (?, ?, 0) "
+			
+			let tags = await selectObjectTags(objs[i].id);
+			for(var j=0; j<tags.length; j++){
+				
+				let foreignTagId = await connection.execute( tag_query, [
+					tags[j].name
+				]);
+				console.log(" < foreign Tag Id > ");
+				console.log(foreignTagId[0]);
+
+				if( foreignTagId[0] != 0 ){ // we catched the foreign Tag
+					let res = await connection.execute(relation_query, [
+						objResult[0].insertId,
+						foreignTagId[0][0].term_id
+					]);
+					console.log(" < search and create relation foreignTag > ");
+					console.log(res[0]);
+				}else{
+					let res2 = await connection.execute(new_tag_query,[
+						tags[j].name,
+						tags[j].name
+							.toLowerCase()
+							.replace(punctREGEX, '')
+							.replace(/(^\s*)|(\s*)$/g, '')
+							.replace(/\s+/g,'_')
+					]);
+					console.log(" < new foreign Tag Id > ");
+					console.log(res2[0]);
+
+					foreignTagId = res2[0].insertId;
+					let res = await connection.execute(relation_query, [
+						objResult.insertId,
+						foreignTagId
+					]);
+					console.log(" < insert foreignTag > ");
+					console.log(res[0]);
+				}
+			}
+
+			console.log(" < logID > ");
+			var logID = await createExportLog(projectID);
+			console.log( logID );
+
+			let mapTheObjRes = await myquery( query2, [logID, objs[i].id]);
+			console.log(" < mapTheObjRes > ");
+			console.log(mapTheObjRes);
 		}
-		// connection.end();
+
+		connection.end();
 		result = '';
 		if(callback)
 			await callback(result);
@@ -778,7 +855,102 @@ module.exports.exportObjects = async (projectID, db_params, callback) => {
 		return ;
 	}
 }
-/////////////////////////////////////////////
+async function selectObjectTags(objectID,callback){
+	try {
+		let query = ""
+		+	"	Select r.id, r.tagID, r.objectID, res.name FROM "
+		+	"	replecon.relationTagObject r"
+		+	"	left join("
+		+	"	select name, id from"
+		+	"	replecon.tag"
+		+	"	)as res on res.id = r.tagID"
+		+	"	where objectID = ?"
+		+	"	order by r.id "
+
+		let result = await myquery( query, [objectID] );
+		console.log(result);
+
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function createExportLog(projectID,callback){
+	try {
+		let query = ""
+				+	" insert into "
+				+	" exportLog(projectID, date) "
+				+	" values( ?, NOW() ) ";
+
+		let result = await myquery( query, [projectID] );
+		
+		console.log(result);
+		result = result.insertId;
+
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////SELECT * FROM replecon.exportLog;
+
+module.exports.selectExportLogs = async (projectID, callback) => {
+	try {
+
+		// let query = "SELECT * FROM tag WHERE MATCH(name) AGAINST(?);";
+		let query = " SELECT * FROM exportLog WHERE projectID = ? ";
+		let result = await myquery(query, [projectID]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}/////////////////////////////////////////////
+module.exports.selectExportLog = async (logID, callback) => {
+	try {
+
+		// let query = "SELECT * FROM tag WHERE MATCH(name) AGAINST(?);";
+		let query = " SELECT * FROM exportLog WHERE id = ? ";
+		let result = await myquery(query, [logID]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result[0]);
+		return result[0];
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}/////////////////////////////////////////////
+module.exports.selectExportLogObjects = async (logID, callback) => {
+	try {
+
+		// let query = "SELECT * FROM tag WHERE MATCH(name) AGAINST(?);";
+		let query = " SELECT * FROM object WHERE DataKey2 = ? ";
+		let result = await myquery(query, [logID]);
+
+		// console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}/////////////////////////////////////////////
 
 module.exports.searchProject = async (name, callback) => {
 	try {
@@ -1166,7 +1338,7 @@ module.exports.saveTagChanges = async (tagID, name, newsyns, callback) => {
 }
 async function tagNameCheck(tagID,name,callback){
 	try {
-		let query = 'SELECT name FROM replecon.tag WHERE id = ?';
+		let query = 'SELECT name FROM tag WHERE id = ?';
 		let result = await myquery( query, [tagID] );
 		
 		console.log(result);
@@ -1182,7 +1354,7 @@ async function tagNameCheck(tagID,name,callback){
 async function tagNameUpdate(tagID,name,callback){
 	try {
 		console.log(" - tagNameUpdate");
-		let query = 'UPDATE replecon.tag SET name = ? WHERE id = ?';
+		let query = 'UPDATE tag SET name = ? WHERE id = ?';
 		let result = await myquery( query, [name,tagID] );
 		console.log(result);
 
@@ -1204,12 +1376,12 @@ async function saveTagSyns(obj, flag, callback){
 		console.log(lostTag);
 
 		for(var i=0; i<newTag.length; i++){
-			let query = 'UPDATE replecon.tag SET flag = ? WHERE id = ?';
+			let query = 'UPDATE tag SET flag = ? WHERE id = ?';
 			let result = await myquery( query, [flag, newTag[i]] );
 			console.log(result);
 		}
 		for(var i=0; i<lostTag.length; i++){
-			let query = 'UPDATE replecon.tag SET flag = null WHERE id = ?';
+			let query = 'UPDATE tag SET flag = null WHERE id = ?';
 			let result = await myquery( query, [lostTag[i]] );
 			console.log(result);
 		}
@@ -1225,11 +1397,11 @@ async function selectTagSyns(tagID,callback){
 	try {
 		let query = ""	
 			+ " select r.id "
-			+ " from replecon.tag r "
+			+ " from tag r "
 			+ " where r.flag = "
 			+ " ( "
 			+ " 	select flag "
-			+ " 	from replecon.tag "
+			+ " 	from tag "
 			+ " 	where id = ? "
 			+ " ) "
 			+ " GROUP BY r.id ";
@@ -1254,11 +1426,11 @@ module.exports.selectFlagTemplates = async (tagID, callback) => {
 	try {
 		var query = ""
 			+ " SELECT *"
-			+ " FROM replecon.tagTemplates"
+			+ " FROM tagTemplates"
 			+ " WHERE flag ="
 			+ " ("
 			+ " SELECT flag"
-			+ " FROM replecon.tag"
+			+ " FROM tag"
 			+ " WHERE id = ?"
 			+ " )"
 		let result = await myquery(query, [ tagID ]);
@@ -1305,7 +1477,7 @@ async function selectTmplKey(tmplID){
 	try {
 		console.log("< selectTmplKey >");
 		console.log(tmplID);
-		var query = "select * from replecon.templateKey where tmplID = ?";
+		var query = "select * from templateKey where tmplID = ?";
 		let result = await myquery( query, [tmplID] );
 
 		console.log(result);
@@ -1320,9 +1492,9 @@ async function selectTmplCondition(tmplKeyID){
 		console.log("< selectTmplCondition >");
 		console.log(tmplKeyID);
 		var query = ""
-		+ " select * from replecon.templateCondition tc "
+		+ " select * from templateCondition tc "
 		+ " left join"
-		+ " (select id, name from replecon.tag)as res "
+		+ " (select id, name from tag)as res "
 		+ " on res.id = tc.tagID"
 		+ " where tc.tmplKeyID = ?"
 		+ " order by tc.id";
@@ -1365,7 +1537,7 @@ module.exports.createTmplTemplate = async (tmplID, keyword, val, tags, callback)
 }
 async function insertTmplKey(tmplID, key, val){
 	try {
-		var query = "INSERT INTO replecon.templateKey (keyword, val, tmplID) values (? ,?, ?)";
+		var query = "INSERT INTO templateKey (keyword, val, tmplID) values (? ,?, ?)";
 		let result = await myquery( query, [key, val, tmplID] );
 
 		console.log(result);
@@ -1379,7 +1551,7 @@ async function insertTmplCondition(tagID, tmplKeyID, positive){
 	try {
 		console.log('< insertTmplCondition >');
 		console.log({tagID, tmplKeyID, positive});
-		var query = "INSERT INTO replecon.templateCondition (tagID, tmplKeyID, positive) values (? ,?, ?)";
+		var query = "INSERT INTO templateCondition (tagID, tmplKeyID, positive) values (? ,?, ?)";
 		let result = await myquery( query, [tagID, tmplKeyID, positive] );
 
 		console.log(result);
@@ -1391,7 +1563,7 @@ async function insertTmplCondition(tagID, tmplKeyID, positive){
 }
 module.exports.createTagTemplate = async (tagID,keyword,val, callback) => {
 	try {
-		var query = "INSERT INTO replecon.tagTemplates (flag, keyword, val) values (? ,?, ?)";
+		var query = "INSERT INTO tagTemplates (flag, keyword, val) values (? ,?, ?)";
 		var flag = await selectTagFlag(tagID).flag;
 		console.log(flag);
 		if(!flag){				
@@ -1413,9 +1585,18 @@ module.exports.deleteTmpl = async (tmplID, callback) => {
 	try {
 		var query = "DELETE FROM template WHERE id = ?";
 		var query2 = "DELETE FROM relationTmplProject WHERE tmplID = ?";
+		var query3 = "SELECT id FROM templateKey WHERE tmplID = ?";
+		var query4 = "DELETE FROM templateCondition WHERE tmplKeyID = ?";
+		var query5 = "DELETE FROM templateKey WHERE id = ?";
 
 		let result = await myquery(query, [ tmplID ]);
 		let result2 = await myquery(query2, [ tmplID ]);
+		let ids = await myquery(query3, [ tmplID ]);
+		for(i=0; i<ids.length; i++){
+			await myquery(query4, [ ids[i] ]);
+			await myquery(query5, [ ids[i] ]);
+		}
+
 		console.log(result);
 
 		if(callback)
@@ -1466,9 +1647,86 @@ module.exports.deleteTagTemplate = async (tagID,tmplID, callback) => {
 		return 0;
 	}
 }
+module.exports.deleteTag = async (tagID, callback) => {
+	try {
+		var query = "DELETE FROM tag WHERE id = ?";
+		var query2 = "DELETE FROM relationTagObject WHERE tagID = ?";
+		var query3 = "DELETE FROM relationTagOriginal WHERE tagID = ?";
+		var query4 = "DELETE FROM relationTagProject WHERE tagID = ?";
+		var query5 = "DELETE FROM templateCondition WHERE tagID = ?";
+
+		var result1 = await myquery(query2, [ tagID ]);
+		var result2 = await myquery(query3, [ tagID ]);
+		var result3 = await myquery(query4, [ tagID ]);
+		var result4 = await myquery(query5, [ tagID ]);
+		var result5 = await myquery(query, [ tagID ]);
+		// console.log(result);
+		if(callback)
+			await callback();
+		// return result[0];
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.deleteProject = async (projectID, callback) => {
+	try {
+		var query = "DELETE FROM project WHERE id = ?";
+		var query2 = "DELETE FROM relationTagProject WHERE projectID = ?";
+		var query3 = "DELETE FROM relationTmplProject WHERE projectID = ?";
+		var query4 = "DELETE FROM relationProjectOriginal WHERE projectID = ?";
+		var query5 = "DELETE FROM projectLog WHERE projectID = ?";
+		var query6 = "DELETE FROM exportLog WHERE projectID = ?";
+
+		var result1 = await myquery(query2, [ projectID ]);
+		var result2 = await myquery(query3, [ projectID ]);
+		var result3 = await myquery(query4, [ projectID ]);
+		var result4 = await myquery(query5, [ projectID ]);
+		var result5 = await myquery(query6, [ projectID ]);
+		
+		var db_query = "SELECT sshhID, dbhID FROM projectDB WHERE projectID = ?";
+		var projectDB = await myquery(db_query, [ projectID ]);
+		if(projectDB[0]){
+			projectDB = projectDB[0];
+			if(projectDB.sshhID){
+				var sshhID_query = "DELETE FROM sshhost WHERE id = ?";
+				var sshh = await myquery(sshhID_query, [ projectDB.sshhID ]);
+			}
+			if(projectDB.dbhID){
+				var dbhID_query = "DELETE FROM sshhost WHERE id = ?";
+				var dbh = await myquery(sshhID_query, [ projectDB.dbhID ]);
+			}
+		}
+		var query7 = "DELETE FROM projectDB WHERE projectID = ?";
+		var result6 = await myquery(query7, [ projectID ]);
+	
+		var objs_query = "SELECT objectID FROM relationProjectObject WHERE projectID = ?";
+		var projectObjs = await myquery(objs_query, [ projectID ]);
+		if(projectObjs.length > 0){
+			var obj_query = "DELETE FROM object WHERE id = ?";
+			for(var i=0; i<projectObjs.length; i++){
+				var obj = await myquery(obj_query, [ projectObjs[i] ]);
+			}
+		}
+		var objs_relation_query = "DELETE FROM relationProjectObject WHERE projectID = ?";
+		var objs_relation = await myquery(objs_relation_query, [ projectID ]);
+
+		var result = await myquery(query, [ projectID ]);
+
+		// console.log(result);
+		if(callback)
+			await callback();
+		// return result[0];
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
 async function selectTagFlag(tagID, callback){
 	try {
-		let query = 'SELECT flag FROM replecon.tag WHERE id = ?';
+		let query = 'SELECT flag FROM tag WHERE id = ?';
 		let result = await myquery( query, [tagID] );
 
 		console.log(result);
@@ -1482,7 +1740,7 @@ async function selectTagFlag(tagID, callback){
 }
 async function createTagFlag(tagID, callback){
 	try {
-		let query = 'UPDATE replecon.tag SET flag = id WHERE id = ?';
+		let query = 'UPDATE tag SET flag = id WHERE id = ?';
 		let result = await myquery( query, [tagID] );
 
 		console.log(result);
@@ -1563,11 +1821,11 @@ module.exports.selectTagSyns = async (id, callback) => {
 	try {	
 		let query = ""	
 			+ " select r.id, r.name "
-			+ " from replecon.tag r "
+			+ " from tag r "
 			+ " where r.flag = "
 			+ " ( "
 			+ " 	select flag "
-			+ " 	from replecon.tag "
+			+ " 	from tag "
 			+ " 	where id = ? "
 			+ " ) "
 			+ " GROUP BY r.id ";
@@ -1824,7 +2082,7 @@ module.exports.selectProjectsRelation = async (callback) => {
 			let size = await myquery(query2, [ projects[i].id ] );
 			project.size = size[0]['count(*)'];
 
-			let query3 	= "SELECT t.name, r.tagID, r.positive FROM replecon.relationTagProject r, replecon.tag t WHERE projectID = ? AND t.id = r.tagID";
+			let query3 	= "SELECT t.name, r.tagID, r.positive FROM relationTagProject r, tag t WHERE projectID = ? AND t.id = r.tagID";
 			let tags = await myquery(query3, [ projects[i].id ] );
 			for(var j=0; j<tags.length; j++){
 				if( tags[j].positive == 0 ){
@@ -1927,11 +2185,11 @@ module.exports.selectTagsEx = async (callback) => {
 		let query = ""
 			+ " select r.id, r.name, r.flag, res.syns "
 			// + " ,res2.tmpls"
-			+ " from replecon.tag r"
+			+ " from tag r"
 			+ " left join"
 			+ " ("
 			+ " 	SELECT flag, count(*) as syns"
-			+ " 	FROM replecon.tag"
+			+ " 	FROM tag"
 			+ " 	group by flag"
 			+ " ) as res on r.flag = res.flag" 
 			// + " left join"
@@ -2037,11 +2295,11 @@ async function selectProjectTags(connection, projectID, callback){
 		// console.log(results);
 
 		query = " select id as tagID"
-			+	" from replecon.tag"
+			+	" from tag"
 			+	" where flag = "
 			+	" ("
 			+	" 	select flag"
-			+	" 	from replecon.tag"
+			+	" 	from tag"
 			+	" 	where id = ?"
 			+	" )"
 			+	" and id not in (?)";
@@ -2178,7 +2436,7 @@ async function tagInsert(connection, tag){ // !
 }
 async function tagSearch(connection, tag){ // !
 	console.log(' - tagSearch');
-	let query = 'SELECT * FROM replecon.tag WHERE `name` = ?';
+	let query = 'SELECT * FROM tag WHERE `name` = ?';
 	let [rows, fields] = await connection.execute(query, [tag] ); // !
 
 	console.log(' = tagSearch result f()');

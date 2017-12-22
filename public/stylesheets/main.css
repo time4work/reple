@@ -663,6 +663,9 @@ section#export-body .info-table h5 {
     height: 40px;
     min-width: 170px;
 }
+.col-red{
+    color: red;
+}
 section#export-body span.unmmaped.objs {
     color: rgb(251, 92, 26);
     font-weight: bold;

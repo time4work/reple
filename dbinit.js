@@ -29,7 +29,7 @@ var queries = {
 		"	FOREIGN KEY (sshhID) REFERENCES replecon.sshhost(id),"+
 		"	FOREIGN KEY (dbhID) REFERENCES replecon.dbhost(id),"+
 		"	UNIQUE(projectID)"+
-		"	)ENGINE = InnoDB;",
+		"	)ENGINE = InnoDB",
 
 	'project-db-sshhost':
 		"	CREATE TABLE IF NOT EXISTS "+
@@ -39,7 +39,7 @@ var queries = {
 		"	port int(5)  DEFAULT null,"+
 		"	user VARCHAR(20) NOT NULL,"+
 		"	password VARCHAR(20) NOT NULL"+
-		"	)ENGINE = InnoDB;",
+		"	)ENGINE = InnoDB",
 
 	'project-db-dbhost':
 		"	CREATE TABLE IF NOT EXISTS "+
@@ -50,9 +50,9 @@ var queries = {
 		"	user VARCHAR(20) NOT NULL,"+
 		"	password VARCHAR(20) NOT NULL,"+
 		"	name VARCHAR(20) NOT NULL"+
-		"	)ENGINE = InnoDB;",
+		"	)ENGINE = InnoDB",
 
-	'project-project-log':
+	'project-import-log':
 		"	CREATE TABLE IF NOT EXISTS "+
 		"	replecon.projectLog ("+
 		"	id INT AUTO_INCREMENT PRIMARY KEY NOT NULL," +
@@ -60,7 +60,16 @@ var queries = {
 		"	type varchar(10),"+
 		"	date DATETIME NOT NULL,"+
 		"	FOREIGN KEY (projectID) REFERENCES replecon.project(id)"+
-		"	)ENGINE = InnoDB;",
+		"	)ENGINE = InnoDB",
+
+	'project-export-log':
+		"	CREATE TABLE IF NOT EXISTS "
+		"	replecon.exportLog ("
+		"	id INT AUTO_INCREMENT PRIMARY KEY NOT NULL, "
+		"	projectID INT(4) NOT NULL,"
+		"	date DATETIME NOT NULL,"
+		"	FOREIGN KEY (projectID) REFERENCES replecon.project(id)"
+		"	)ENGINE = InnoDB",
 
 	'template-key': 		"CREATE TABLE IF NOT EXISTS replecon.templateKey(id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255),val VARCHAR(255),tmplID int(4) NOT NULL,FOREIGN KEY (tmplID) REFERENCES replecon.template(id))ENGINE = InnoDB",
 	'template-condition': 	"CREATE TABLE IF NOT EXISTS replecon.templateCondition(id INT AUTO_INCREMENT PRIMARY KEY, tagID int(4) NOT NULL,tmplKeyID int(4) NOT NULL,positive BOOLEAN NOT NULL,FOREIGN KEY (tagID) REFERENCES replecon.tag(id),FOREIGN KEY (tmplKeyID) REFERENCES replecon.templateKey(id))ENGINE = InnoDB",

@@ -22,7 +22,11 @@
   		<hr>
   		<h3>Export history:</h3>
   		<ul class='export-history'>
-  			
+  			<% scope.exportlogs.reverse().forEach(function(elog, iter) { %>
+  				<li>
+  					<a href="<%=elog.id%>/"> <%=elog.date%> </a>
+  				</li>
+  			<% }); %>
   		</ul>
   	</div>
 
@@ -55,12 +59,19 @@
 </body>
 <script>
 var project_id = <%=scope.project.id%>;
+var unmmaped_objs_size = <%=scope.objs.length%>;
+
 	$(function(){
 		$("#export-push").on('click', ()=>{
 			console.log("push");
+			if(unmmaped_objs_size == 0){
+				alert("There is no unmmaped objects");
+				return;
+			}
 			data = {type: "project.export.push"}
 		    ajax('/project/'+project_id+'/export/', data, (result)=>{
 		        console.log(result);
+		        location.reload();
 	    	});
 		});
 

@@ -44,7 +44,14 @@
 								</button>
 							</p>
 						</div>
-						<p><button type='submit' class='btn'>save</button></p>
+						<p>
+							<button type="button" class='btn btn-danger delete'>
+								delete
+							</button>
+							<button type='submit' class='btn btn-success'>
+								save
+							</button>
+						</p>
 					</form>
 				</div>
 			</div>
@@ -97,6 +104,25 @@
 			// var select_name = '#'+select_id;
 			console.log( {"id":tag_id, "label":tag_name} );
 			$('#syns-tag').tagsinput('add', {"id":tag_id, "label":tag_name} );
+		});
+		$('button.delete').on('click', (e)=>{
+			console.log(e);
+			console.log('click');
+			var btn = e.target;
+
+			if(!confirm("are you sure? It can break a lot of conditions"))
+				return;
+			var data = {};
+			data.type = 'tag.del';
+		    ajax('/tag/'+<%=scope.tag.id%>, data, (_data, textStatus)=>{
+		    	console.log(_data);
+		        if (_data.redirect) {
+		            window.location.href = _data.redirect;
+		        }
+		        else {
+		            console.log('oops');
+		        }
+	        });
 		});
 	});
 </script>

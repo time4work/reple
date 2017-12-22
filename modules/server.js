@@ -118,6 +118,9 @@ module.exports = function(params){
 				break;
 			case "project.delete":
 				console.log("project.delete");
+				await helpers.deleteProject(project_id,()=>{
+					response.send({redirect:'/projects/'});
+				});
 				break;
 			default:
 				console.log("project.error");
@@ -145,7 +148,16 @@ module.exports = function(params){
 			await helpers.selectProjectDB(project_id, async (result2) => {
 				await helpers.selectProjectLogs(project_id, async (result3) => {
 					await helpers.selectProjectUnmappedObjects(project_id, async(result4)=>{
-						response.render('pages/export',{scope: {project: result, db: result2, logs: result3, objs: result4}});
+						await helpers.selectExportLogs(project_id, async(result5)=>{
+							response.render('pages/export',{scope: {
+								project: result, 
+								db: result2, 
+								logs: result3, 
+								objs: result4,
+								exportlogs: result5
+							}});
+						});
+						
 					});
 				});
 			});	
@@ -163,12 +175,32 @@ module.exports = function(params){
 					
 					await helpers.exportObjects(project_id, db_params, async (result)=>{
 						console.log(result);
-						response.send("ok");
+						// response.send("ok");
+						// response.redirect('/project/'+project_id+'/export');
+						response.send({err:"oops"});
 					});
 				});
 			}else{}
 		});
 	});
+
+
+	app.get('/project/:id/export/:log/', async (request, response)=>{ 
+		let project_id = request.params.id;
+		let export_log_id = request.params.log;
+		await helpers.selectProject(project_id, async (result) => {
+			await helpers.selectExportLog(export_log_id, async (result2)=>{
+				await helpers.selectExportLogObjects(export_log_id, async (result3)=>{
+					response.render('pages/log_objects', {scope: {
+						project: result,
+						log: result2,
+						objects: result3
+					}});
+				});
+			});
+		});
+	});
+
 
 	app.get('/project/:id/database', async (request, response)=>{ 
 		let project_id = request.params.id;
@@ -282,7 +314,7 @@ module.exports = function(params){
 			case "delTTmpl":
 				let template_id = request.body.id;
 				if(!template_id)
-					response.send({err:'oops'})
+					response.send({err:'oops'});
 
 				await helpers.deleteTmplTemplate(template_id, (result) => {
 					response.send(result);
@@ -308,17 +340,28 @@ module.exports = function(params){
 		});
 	});
 	app.post('/tags', async (request, response) => {
-		let name = request.body.name.toLowerCase();
-		if(!name)
-			response.send("oops");
-		else
+		let name;
+
 		switch(request.body.type){
 			case "search":
-				await helpers.searchTag(name, (result) => {
-					response.send(result);
-				});
+				name = request.body.name.toLowerCase();
+				if(!name)
+					response.send("oops");
+				else
+					await helpers.searchTag(name, (result) => {
+						response.send(result);
+					});
 				break;
 			case "add":
+				name = request.body.name.toLowerCase();
+				if(!name)
+					response.send("oops");
+				else
+					await helpers.createTag(name, (result) => {
+						response.redirect('/tags');
+					});
+				break;
+			case "del":
 				await helpers.createTag(name, (result) => {
 					response.redirect('/tags');
 				});
@@ -359,20 +402,25 @@ module.exports = function(params){
 					response.redirect('/tag/'+tag_id);
 				})
 				break;
-			case "newTempl":
-				console.log("newTemplate");
-				let key = request.body.key.toLowerCase();
-				let val = request.body.val;
-				await helpers.createTagTemplate(tag_id, key, val, (result) => {
-					response.send(result);
-				});
-				break;
-			case "delTmpl":
-				let tmpl_id = request.body.id;
-				if(!tmpl_id)
-					response.send({err:'oops'})
-				await helpers.deleteTagTemplate(tag_id, tmpl_id, (result) => {
-					response.send(result);
+			// case "newTempl":
+			// 	console.log("newTemplate");
+			// 	let key = request.body.key.toLowerCase();
+			// 	let val = request.body.val;
+			// 	await helpers.createTagTemplate(tag_id, key, val, (result) => {
+			// 		response.send(result);
+			// 	});
+			// 	break;
+			// case "delTmpl":
+			// 	let tmpl_id = request.body.id;
+			// 	if(!tmpl_id)
+			// 		response.send({err:'oops'});
+			// 	await helpers.deleteTagTemplate(tag_id, tmpl_id, (result) => {
+			// 		response.send(result);
+			// 	});
+			// 	break;
+			case "tag.del":
+				await helpers.deleteTag(tag_id, (result) => {
+					response.send({redirect:'/tags/'});
 				});
 				break;
 			default:
@@ -387,7 +435,7 @@ module.exports = function(params){
 	app.post('/json', async (request, response) => {
 		let obj = JSON.parse(request.body.data);
 		await helpers.loadJson(obj, async (result) => {
-			response.redirect('/json');
+			response.redirect('/json/');
 		});
 		console.log('await end')
 	});

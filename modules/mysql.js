@@ -21,7 +21,7 @@ module.exports.asynccon = async function(){
 	});
 };
 module.exports.childcon = function(params){
-	const  mysql = require('mysql2');
+	const  mysql = require('mysql2/promise');
 	return mysql.createConnection({
 		host     : params.host 		|| 'localhost',
 		user     : params.user 		|| 'test',
