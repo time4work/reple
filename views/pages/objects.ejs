@@ -9,8 +9,24 @@
   
   <div class="container">
   	<h1>Object List Page</h1>
-  	<h3>Data length: <%=scope.size%></h3>
+    <h3>Data length: <%=scope.size%></h3>
+    <h3>Ready Objects: <%=scope.size2%></h3>
   	<hr>
+    <ul class='object-menu'>
+      <li>
+          <i class="fa fa-camera-retro" aria-hidden="true"></i>
+        <a href="#" onclick='makeThumbs(event)'>
+          <span>make thumbs</span>
+        </a>
+      </li>
+      <li>
+          <i class="fa fa-eye" aria-hidden="true"></i>
+        <a href="#">
+          <span>check links</span>
+        </a>
+      </li>
+    </ul>
+    <hr>
 	<!-- <div class="psearch">
 		<input type="text" id="search" placeholder="SEARCH BY NAME" >
 		<img class="find noselect" src="/img/s-icon.svg">
@@ -19,6 +35,7 @@
         <thead>
           <tr>
             <th>Id</th>
+            <th>Thumbs</th>
             <th>Title</th>
             <th>Description</th>
             <th>link</th>
@@ -29,9 +46,14 @@
         </tbody>
 
         <tbody id='list-tbody'>
-          <% scope.array.forEach(function(obj, iter) { %>
+          <% scope.objects.forEach(function(obj, iter) { %>
           <tr>
             <td class="number"> <%= obj.id %> </td>
+            <td>
+              <%if ( obj.DataLink2 ){ %>
+                <i class='fa fa-check' aria-hidden='true' style='color:green;'></i>
+              <% } %> 
+            </td>
             <td><%= obj.DataTitle1 %></td>
             <td><%= obj.DataText1 %></td>
             <td><a href="<%= obj.DataLink1 %>">link</a></td>
@@ -41,4 +63,21 @@
     </table>
   </div>
 </body>
+<script>
+  const projectID = <%=scope.project.id%>;
+  function makeThumbs(event){
+    if (event.preventDefault) event.preventDefault();
+    console.log('click');
+    data = {};
+    data.type = 'objects.thumbs.make';
+
+    if( confirm("are you sure?") ){
+      blockTheKraken();
+      ajax('/project/'+projectID+'/objects/', data, (result)=>{
+        console.log(result);
+        releaseTheKraken()
+      });
+    }
+  }
+</script>
 </html>

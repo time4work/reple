@@ -161,7 +161,7 @@ function tagForm(e) {
     if (e.preventDefault) e.preventDefault();
     if ( !confirm("are you sure") )
         return
-    var name = document.getElementById("name-input");
+    // var name = document.getElementById("name-input");
     var syns = $('#syns-tag').val()
     var tag_id = document.getElementById('tag-details').getAttribute('tag-id');
     var x = e.target.getElementsByTagName("input")[0];
@@ -352,4 +352,18 @@ function ajax(url, data, callback){
             callback(response);
       },
     });
+}
+function blockTheKraken(){
+    var div = document.createElement('div');
+    div.className = "p-kraken";
+    div.innerHTML = "<strong>W8!</strong> scraping...";
+
+    document.body.appendChild(div);
+};
+function releaseTheKraken(){
+    var div = document.getElementsByClassName("p-kraken");
+    for(var i=0; i<div.length; i++){
+        document.body.removeChild(div[i]);
+    }
+    
 }

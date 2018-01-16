@@ -1,12 +1,13 @@
 /////////////////////////////////////////////
 const fs 		= require('fs');
+const PythonShell = require('python-shell');
 
 const MYSQL 	= require('./mysql').connection;
 const MYSQL_SSH	= require('./mysql').sshcon;
 const ASYNSQL 	= require('./mysql').asynccon;
 const CHILDCON 	= require('./mysql').childcon;
-
-const PythonShell = require('python-shell');
+const scraperModule 	= require('./scraper');
+const ffmpegModule 	= require('./ffmpeg');
 
 const punctREGEX = /[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g;
 
@@ -236,7 +237,7 @@ async function createObject(projectID,originalID,title, description, videolink, 
 		var query = ""
 				+ " Insert Into"
 				+ " object "
-				+ " (DataTitle1, DataLink1, DataText1, FootPrint1, DataLink2, DataKey1)"
+				+ " (DataTitle1, DataLink1, DataText1, FootPrint1, FootPrint2, DataKey1)"
 				+ " values (?,?,?,?,?,?)";
 		let object = await myquery(query, 
 			[ title, videolink, description, originalID, donorlink, logID ]);
@@ -617,6 +618,89 @@ module.exports.createProject = async (name, callback) => {
 		console.log(e);
 		return 0;
 	}
+}
+module.exports.selectProjectReadyObjects = async (objects, callback) => {
+	var x = 0;
+	for(var i=0; i<objects.length; i++){
+		if( objects[i].DataLink2 ) x++;
+	}
+	if(callback)
+		await callback(x);
+	return x;
+}
+module.exports.pageScraper = async (page, callback) => {
+	try {
+		console.log('pageScraper');
+		var link = await scraperModule.getLink(page);
+		console.log('link');
+		console.log(link);
+		console.log();
+		if(!link) return;
+		
+		var result = await ffmpegModule.makeThumbs(link, async (res)=>{
+			console.log("filenames");
+			console.log(res);
+			if(callback)
+				await callback(res);
+		});
+		console.log();
+		// return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function pageScraper(page, callback) {
+	try {
+		console.log('pageScraper');
+		var link = await scraperModule.getLink(page);
+		console.log('link');
+		console.log(link);
+		console.log();
+		if(!link) return;
+		
+		var result = await ffmpegModule.makeThumbs(link, async (res)=>{
+			console.log("filenames");
+			console.log(res);
+			if(callback)
+				await callback(res);
+		});
+		console.log();
+		// return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+async function addThumbsToObject(objectID, text) {
+	try {
+		let query = "UPDATE object"
+		+ " SET DataLink2 = ?"
+		+ " WHERE id = ? ";
+		let result = await myquery(query, [ text , objectID ]);
+		console.log('addThumbsToObject');
+		console.log(result);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.makeObjectThumbs = async (objects, callback) => {
+	for(var i=0; i<objects.length; i++){
+		if( !objects[i].DataLink2 ) {
+			pageScraper(objects[i].DataLink1, async (res)=>{
+				var text = res.names.join(',');
+				await addThumbsToObject(objects[i].id, text);
+			});
+		}
+	}
+	if(callback)
+		await callback();
 }
 module.exports.selectProjectObjects = async (projectID, callback) => {
 	try {

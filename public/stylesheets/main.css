@@ -594,6 +594,32 @@ section#project-details {
     cursor: pointer;
     color: red;
 }
+div.p-kraken{
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.72);
+    z-index: 999; 
+}
+ul.object-menu i {
+    font-size: 20px;
+    margin: 0 5px;
+}
+ul.object-menu li:nth-child(n+2) {
+    border-left: 1px solid black;
+}
+ul.object-menu li {
+    display: inline-block;
+    /*border-left: 1px solid black;*/
+    margin: 5px 0;
+    padding: 5px;
+}
+ul.object-menu {
+    display: inline-block;
+    margin: 0;
+}
 section#project-left-menu ul {
     list-style: none;
     padding: 0;
@@ -601,7 +627,8 @@ section#project-left-menu ul {
 }
 section#project-left-menu li div.item {
     border: 1px solid gray;
-    padding: 15px;
+    padding: 10px;
+    font-size: 20px;
     width: 50px;
     height: 50px;
     text-align: center;
@@ -665,6 +692,11 @@ section#export-body .info-table h5 {
 }
 .col-red{
     color: red;
+}
+.top-menu .logo {
+    float: left;
+    margin: 5px 0 0 20px;
+    font-size: 20px;
 }
 section#export-body span.unmmaped.objs {
     color: rgb(251, 92, 26);

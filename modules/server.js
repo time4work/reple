@@ -11,7 +11,7 @@ const helpers 		= require('./helpers');
 /////////////////////////////////////////////
 module.exports = function(params){
 	var dir 		= params.rootdir;
-	var port 		= process.env.port || 5000;
+	var port 		= process.env.port || 5001;
 	var app 		= express();
 
 	app.set('port', (process.env.PORT || port) );
@@ -35,6 +35,19 @@ module.exports = function(params){
 
 	app.get('/', (request, response) => { 
 		response.render('pages/index',{title : 'Happy ejs' });
+	}); 
+	app.post('/', async (request, response) => { 
+		switch(request.body.type){
+			case "scraper":
+				let page = request.body.page;
+				await helpers.pageScraper(page, async (info)=>{
+					response.send(info);
+				});
+				break;
+			default:
+				console.log(2);
+				response.send({err: "switch type err"});
+		}		
 	}); 
 
 	app.get('/projects', async (request, response) => {
@@ -135,13 +148,29 @@ module.exports = function(params){
 		await helpers.selectProject(project_id, async (result) => {
 			await helpers.selectProjectSize(project_id, async (result2) => {
 				await helpers.selectProjectObjects(project_id, async (result3) => {
-					response.render('pages/objects', {scope: {project: result, size:result2, array:result3} });
+					await helpers.selectProjectReadyObjects(result3, async (result4)=>{
+						response.render('pages/objects', {scope: {project: result, size:result2,size2: result4, objects:result3} });
+					});
 				});
 			});
 		});
-
 	});
+	app.post('/project/:id/objects', async (request, response)=>{ 
+		let project_id = request.params.id;
 
+		switch(request.body.type){
+			case 'objects.thumbs.make':
+				await helpers.selectProjectObjects(project_id, async (result) => {
+					await helpers.makeObjectThumbs(result, async () => {
+						response.send({status: "ok"});
+					});
+				});
+				// pageScraper
+				break;
+			default:
+				response.send({err: "opps, wrong type"});
+		}
+	});
 	app.get('/project/:id/export', async (request, response)=>{ 
 		let project_id = request.params.id;
 		await helpers.selectProject(project_id, async (result) => {

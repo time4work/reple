@@ -63,12 +63,12 @@ var queries = {
 		"	)ENGINE = InnoDB",
 
 	'project-export-log':
-		"	CREATE TABLE IF NOT EXISTS "
-		"	replecon.exportLog ("
-		"	id INT AUTO_INCREMENT PRIMARY KEY NOT NULL, "
-		"	projectID INT(4) NOT NULL,"
-		"	date DATETIME NOT NULL,"
-		"	FOREIGN KEY (projectID) REFERENCES replecon.project(id)"
+		"	CREATE TABLE IF NOT EXISTS "+
+		"	replecon.exportLog ("+
+		"	id INT AUTO_INCREMENT PRIMARY KEY NOT NULL, "+
+		"	projectID INT(4) NOT NULL,"+
+		"	date DATETIME NOT NULL,"+
+		"	FOREIGN KEY (projectID) REFERENCES replecon.project(id)"+
 		"	)ENGINE = InnoDB",
 
 	'template-key': 		"CREATE TABLE IF NOT EXISTS replecon.templateKey(id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255),val VARCHAR(255),tmplID int(4) NOT NULL,FOREIGN KEY (tmplID) REFERENCES replecon.template(id))ENGINE = InnoDB",
