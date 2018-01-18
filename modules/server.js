@@ -11,7 +11,7 @@ const helpers 		= require('./helpers');
 /////////////////////////////////////////////
 module.exports = function(params){
 	var dir 		= params.rootdir;
-	var port 		= process.env.port || 5002;
+	var port 		= process.env.port || 5001;
 	var app 		= express();
 
 	app.set('port', (process.env.PORT || port) );
