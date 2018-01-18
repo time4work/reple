@@ -9,6 +9,8 @@ module.exports.makeThumbs = async function(url, callback) {
     	duration;
 
     // var result = 
+    console.log(" = video screens = ");
+    await Promise.resolve(
     await takeScreen(url, 1, '15%' , async (screen1)=>{
     	await takeScreen(url, 2, '30%' , async (screen2)=>{
 	    	await takeScreen(url, 3, '45%' , async (screen3)=>{
@@ -27,15 +29,26 @@ module.exports.makeThumbs = async function(url, callback) {
 								duration: screen1.duration
 							});
 						}
-						return {
+						return new Promise(function(resolve, reject) {
+					        resolve({
 								names: names,
 								duration: screen1.duration
-							}
+							});
+					    })
+						// return {
+						// 		names: names,
+						// 		duration: screen1.duration
+						// 	}
 		    		});
 		    	});
 		    });
     	});
-    });
+    // });
+	})).then((r)=>{
+	    console.log(" = video screens = ");
+    	console.log(r);
+        return r;
+	});
 
 	// if(callback)
 	// 	await callback(result);
@@ -59,7 +72,7 @@ async function takeScreen(url, prefix, timemark, callback){
 	var duration;
 	var name;
 
-	new Promise((resolve, reject) => {
+	await new Promise((resolve, reject) => {
 		ffmpeg(url)
 			.videoBitrate('800k')
 			.on('codecData', function(data) {

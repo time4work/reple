@@ -11,7 +11,7 @@ const helpers 		= require('./helpers');
 /////////////////////////////////////////////
 module.exports = function(params){
 	var dir 		= params.rootdir;
-	var port 		= process.env.port || 5001;
+	var port 		= process.env.port || 5002;
 	var app 		= express();
 
 	app.set('port', (process.env.PORT || port) );
@@ -160,6 +160,10 @@ module.exports = function(params){
 
 		switch(request.body.type){
 			case 'objects.thumbs.make':
+				// await setTimeout(function(){
+				// 	response.send({status: "ok"});
+				// }, 1000);
+
 				await helpers.selectProjectObjects(project_id, async (result) => {
 					await helpers.makeObjectThumbs(result, async () => {
 						response.send({status: "ok"});

@@ -75,9 +75,20 @@
       blockTheKraken();
       ajax('/project/'+projectID+'/objects/', data, (result)=>{
         console.log(result);
-        releaseTheKraken()
+        releaseTheKraken();
+        alert('finish');
       });
     }
   }
+
+  $(function(){
+    console.log('start');
+    // var eventSource = new EventSource("/project/1/objects/");
+
+    // eventSource.onmessage = function(e) {
+    //   console.log("Пришло сообщение: " + e.data);
+    //   console.log(e);
+    // };
+  });
 </script>
 </html>

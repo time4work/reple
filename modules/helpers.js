@@ -681,8 +681,8 @@ async function addThumbsToObject(objectID, text) {
 		console.log('addThumbsToObject');
 		console.log(result);
 
-		if(callback)
-			await callback(result);
+		// if(callback)
+		// 	await callback(result);
 		return result;
 
 	} catch (e) {
@@ -693,8 +693,12 @@ async function addThumbsToObject(objectID, text) {
 module.exports.makeObjectThumbs = async (objects, callback) => {
 	for(var i=0; i<objects.length; i++){
 		if( !objects[i].DataLink2 ) {
-			pageScraper(objects[i].DataLink1, async (res)=>{
+			await pageScraper(objects[i].DataLink1, async (res)=>{
 				var text = res.names.join(',');
+				console.log("text");
+				console.log(text);
+				console.log("objects[i].id");
+				console.log(objects[i].id);
 				await addThumbsToObject(objects[i].id, text);
 			});
 		}
@@ -910,8 +914,10 @@ module.exports.exportObjects = async (projectID, db_params, callback) => {
 					console.log(res2[0]);
 
 					foreignTagId = res2[0].insertId;
+					console.log("< foreignTagId >");
+					console.log(foreignTagId);
 					let res = await connection.execute(relation_query, [
-						objResult.insertId,
+						objResult[0].insertId,
 						foreignTagId
 					]);
 					console.log(" < insert foreignTag > ");
