@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "db": "node initdb.js",
-    "start": "node app.js"
+    "start": "node app.js",
+    "test": "DB_HOST=localhost DB_USER=root DB_PASSWORD=zaJWESh2We DB_DATABASE=replecon node app.js"
   },
   "author": "sadman",
   "license": "ISC",
