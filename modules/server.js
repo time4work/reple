@@ -466,11 +466,12 @@ module.exports = function(params){
 		response.render('pages/json');
 	});
 	app.post('/json', async (request, response) => {
-		let obj = JSON.parse(request.body.data);
-		await helpers.loadJson(obj, async (result) => {
-			response.redirect('/json/');
-		});
-		console.log('await end')
+		let obj = await JSON.parse(request.body.data);
+		// response.redirect('/json/');
+		response.send({resp: 'loaded'});
+
+		await helpers.loadJson(obj, async (result) => {});
+		console.log('await end');
 	});
 
 	app.get('/generator', async (request, response) => {

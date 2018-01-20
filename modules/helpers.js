@@ -6,6 +6,7 @@ const MYSQL 	= require('./mysql').connection;
 const MYSQL_SSH	= require('./mysql').sshcon;
 const ASYNSQL 	= require('./mysql').asynccon;
 const CHILDCON 	= require('./mysql').childcon;
+const POOLCON 	= require('./mysql').pool;
 const scraperModule 	= require('./scraper');
 const ffmpegModule 	= require('./ffmpeg');
 
@@ -2498,27 +2499,44 @@ async function spinText(text, callback){ // !
 	}
 }
 /////////////////////////////////////////////
-module.exports.loadJson = async function(json){ // !
-	const connection 	= await ASYNSQL(); // !
-
+module.exports.loadJson = async function(json, callback){ // !
+	// var connection 	= await ASYNSQL(); // !
+	var connection 		= await POOLCON();
+	// console.log(json.length);
 	for (var iter=0; iter<json.length; iter++) {
 		let item = json[iter];
+		console.log(" - - - - - - - - - - - - JSON ");
+		console.log(" -[ "+iter+" ] - - - - - JSON ");
+		console.log(" - - - - - - - - - - - - JSON ");
 		try {
-			let ids = await magic(connection,item); // !
-			console.log(ids);
-			await originalRelation(connection,ids); // !
+			if(await uniqItem(connection,item)){
+				let ids = await magic(connection,item); // !
+				console.log(ids);
+				await originalRelation(connection,ids); // !
+			}
 
 		} catch (e) {
 			console.log(e);
-			return 0;
+			// return 0;
 		}
 	}
+	await connection.end();
 	console.log(' Json Loaded ! ');
+	if(callback)
+		await callback();
 };
+async function uniqItem(connection, item){
+	console.log(' - uniqItem');
+	let query 	= "SELECT * FROM original WHERE `video` = ?";
+	let result = await connection.query(query, [item.video] ); // !
+	console.log(result[0]);
+	console.log(' = uniqItem');
+	return result[0].length ? false : true;
+}
 async function tagInsert(connection, tag){ // !
 	console.log(' - tagInsert');
 	let query 	= "INSERT INTO tag (`name`) VALUES (?)";
-	let result = await connection.execute(query, [tag] ); // !
+	let result = await connection.query(query, [tag] ); // !
 
 	console.log(' = tagInsert result f()');
 	console.log({result: result});
@@ -2527,7 +2545,7 @@ async function tagInsert(connection, tag){ // !
 async function tagSearch(connection, tag){ // !
 	console.log(' - tagSearch');
 	let query = 'SELECT * FROM tag WHERE `name` = ?';
-	let [rows, fields] = await connection.execute(query, [tag] ); // !
+	let [rows, fields] = await connection.query(query, [tag] ); // !
 
 	console.log(' = tagSearch result f()');
 	console.log({rows: rows, fields: fields});
@@ -2538,7 +2556,7 @@ async function originalCreate(connection, item){ // !
 	console.log(item);
 
 	let query = 'INSERT INTO original (`title`,`link`,`video`,`description`) VALUES (?,?,?,?)';
-	let result = await connection.execute(query, [ item.title, item.href, item.video, item.desc] ); // !
+	let result = await connection.query(query, [ item.title, item.href, item.video, item.desc] ); // !
 
 	console.log(' = originalCreate result f()');
 	console.log(result);
@@ -2549,7 +2567,7 @@ async function originalRelation(connection, ids){
 
 	let query = 'INSERT INTO relationTagOriginal (`tagID`,`originalID`) VALUES (?,?)';
 	await ids.tags.forEach( async (item, i , arr) => {
-		let [row] = await connection.execute( query, [ ids.tags[i], ids.original] );
+		let [row] = await connection.query( query, [ ids.tags[i], ids.original] );
 	console.log(' = originalRelation result f()');
 	console.log(row);
 	});
@@ -2594,8 +2612,8 @@ async function tagsParse(connection, tags){
 	return tagIds;
 }
 async function magic(connection, item){
-	let tags 			= item.tags.split(/,/g);
-	let ids 			= {};
+	let tags = item.tags.split(/,/g);
+	let ids = {};
 
 	ids.tags = await tagsParse(connection, tags);
 

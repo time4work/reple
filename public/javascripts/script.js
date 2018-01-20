@@ -195,6 +195,8 @@ function onReaderLoad(e){
 function jsonForm(e) {
     if (e.preventDefault) e.preventDefault();
     // console.log(e);
+    blockTheKraken("<span>loading . . .</span>");
+
     var file = e.target.getElementsByTagName("input")[0].files[0];
     var reader = new FileReader();
     var xhr = new XMLHttpRequest();
@@ -210,10 +212,12 @@ function jsonForm(e) {
                     }
                 }
                 xhr.onloadstart = function (e) {
-                    console.log("start")
+                    console.log("start");
                 }
                 xhr.onloadend = function (e) {
-                    console.log("end")
+                    console.log("end");
+                    releaseTheKraken();
+                    alert('finish');
                 }
                 xhr.onreadystatechange = function (){
                     console.log(xhr);
@@ -353,11 +357,13 @@ function ajax(url, data, callback){
       },
     });
 }
-function blockTheKraken(){
+function blockTheKraken(text){
     var div = document.createElement('div');
     div.className = "p-kraken";
-    div.innerHTML = "<strong>W8!</strong> scraping...";
-
+    if(!text)
+        div.innerHTML = "<strong>W8!</strong> scraping...";
+    else
+        div.innerHTML = text;
     document.body.appendChild(div);
 };
 function releaseTheKraken(){
