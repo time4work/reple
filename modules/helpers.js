@@ -141,17 +141,23 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				console.log(donor_link);
 
 				let originalTags = await selectOriginalTags(connection, originalID);
+				console.log(' < originalTags >');
+				console.log(originalTags);
 				let synTags = [];
 				for(var i=0; i<originalTags.length; i++){
-					let syns = await selectTagSyns(originalTags[i]);
+					console.log(' < originalTags[i].tagID >');
+					console.log(originalTags[i].tagID);
+					let syns = await selectTagSyns(originalTags[i].tagID);
 					
-					if(syns)
+					if(syns.length > 0)
 						for(var j=0; j<syns.length; j++){
 							synTags.push(syns[j]);
 						}
 					else	
-						synTags.push(originalTags[i]);				
+						synTags.push(originalTags[i].tagID);				
 				}
+				console.log(' < synTags >');
+				console.log(synTags);
 				let d_tmpl_pack = await selectProjectDescriptionTemplate(projectID,synTags);
 				// console.log(' < tmpl_pack >');
 				// console.log(tmpl_pack);
@@ -290,7 +296,7 @@ async function parseTmplObj(json){
 	}
 	return tmpls;
 }
-async function selectProjectDescriptionTemplate (projectID,tags, callback)  {
+async function selectProjectDescriptionTemplate (projectID, tagIDs, callback)  {
 	try {
 		var query = ""
 			+ " SELECT *"
@@ -313,13 +319,13 @@ async function selectProjectDescriptionTemplate (projectID,tags, callback)  {
 
 // ----------------------------------------------------
 
-		console.log(tags);
-		let tagIDs = [];
-		for(var i=0; i<tags.length; i++){
-			tagIDs.push(tags[i].id);
-		}
-		console.log(" < tagIDs >");
-		console.log(tagIDs);
+		// console.log(tags);
+		// let tagIDs = [];
+		// for(var i=0; i<tags.length; i++){
+		// 	tagIDs.push(tags[i].id);
+		// }
+		// console.log(" < tagIDs >");
+		// console.log(tagIDs);
 
 		query = ""
 			+ " SELECT *"
@@ -390,7 +396,7 @@ async function selectProjectDescriptionTemplate (projectID,tags, callback)  {
 		return 0;
 	}
 }
-async function selectProjectTitleTemplate (projectID, tags, callback)  {
+async function selectProjectTitleTemplate (projectID, tagIDs, callback)  {
 	try {
 		var query = ""
 			+ " SELECT *"
@@ -413,13 +419,13 @@ async function selectProjectTitleTemplate (projectID, tags, callback)  {
 
 // ----------------------------------------------------
 
-		console.log(tags);
-		let tagIDs = [];
-		for(var i=0; i<tags.length; i++){
-			tagIDs.push(tags[i].id);
-		}
-		console.log(" < tagIDs >");
-		console.log(tagIDs);
+		// console.log(tags);
+		// let tagIDs = [];
+		// for(var i=0; i<tags.length; i++){
+		// 	tagIDs.push(tags[i].id);
+		// }
+		// console.log(" < tagIDs >");
+		// console.log(tagIDs);
 
 		query = ""
 			+ " SELECT *"
@@ -458,11 +464,14 @@ async function selectProjectTitleTemplate (projectID, tags, callback)  {
 
 				for(var j=0; j<p_condition.length; j++){
 					if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
-
+						console.log('p_condition[j].tmplKeyID');
+						console.log(p_condition[j].tmplKeyID);
 						bool = false;
-						if( tagIDs.indexOf(p_condition[j].tagID) ){
+						if( tagIDs.indexOf(p_condition[j].tagID) > -1 ){
+							console.log('tagIDs.indexOf(p_condition[j].tagID)');
+							console.log(true);
 							bool = true;
-							break;
+							// break;
 						} 
 					}
 				}
@@ -471,9 +480,9 @@ async function selectProjectTitleTemplate (projectID, tags, callback)  {
 					if( n_condition[j].tmplKeyID == keys[i].id ){
 
 						bool = true;
-						if( tagIDs.indexOf(n_condition[j].tagID) ){
+						if( tagIDs.indexOf(n_condition[j].tagID > -1 ) ){
 							bool = false;
-							break;
+							// break;
 						} 
 					}
 				}
@@ -1498,6 +1507,8 @@ async function selectTagSyns(tagID,callback){
 			+ " GROUP BY r.id ";
 		let result = await myquery( query, [tagID] );
 
+		console.log('selectTagSyns result');
+		console.log(result);
 		var arr = [];
 		for(var i=0; i<result.length; i++){
 			arr.push(result[i].id);		
@@ -2197,7 +2208,7 @@ module.exports.selectProjectsRelation = async (callback) => {
 /////////////////////////////////////////////
 module.exports.selectTags = async (callback) => {
 	try {
-		let query = "SELECT * FROM tag";
+		let query = "SELECT * FROM tag order by name";
 		let result = await myquery(query, []);
 
 		if(callback)
@@ -2249,7 +2260,7 @@ module.exports.selectNullTags = async (callback) => {
 			+ " 	group by flag"
 			+ " ) as res on r.flag = res.flag "
 			+ " where res.syns < 2 OR r.flag is null "
-			+ " order by id";
+			+ " order by name";
 		let result = await myquery(query, []);
 
 		if(callback)
@@ -2289,7 +2300,7 @@ module.exports.selectTagsEx = async (callback) => {
 			// + " 	FROM replecon.tagTemplates"
 			// + " 	group by flag"
 			// + " ) as res2 on r.flag = res2.flag "
-			+ " order by id";
+			+ " order by name";
 		let result = await myquery(query, []);
 
 		if(callback)
@@ -2315,42 +2326,42 @@ module.exports.selectTagsEx = async (callback) => {
 // 	return result[0];
 // }
 /////////////////////////////////////////////
-module.exports.selectRandomOriginal = async (projectID, callback) => {
-	const connection 	= await ASYNSQL(); // !
-	try {
-		let positiveArr = [];
-		let negetiveArr = [];
-		await selectProjectTags(connection, projectID, async (result) => {
-			console.log(result);
-			for(var i=0; i < result.length; i++){
-				if(result[i].positive == 0){
-					await negetiveArr.push(result[i].tagID);
-				}else{
-					await positiveArr.push(result[i].tagID);
-				}
-			}
-		});
-		console.log(positiveArr);
-		console.log(negetiveArr);
+// module.exports.selectRandomOriginal = async (projectID, callback) => {
+// 	const connection 	= await ASYNSQL(); // !
+// 	try {
+// 		let positiveArr = [];
+// 		let negetiveArr = [];
+// 		await selectProjectTags(connection, projectID, async (result) => {
+// 			console.log(result);
+// 			for(var i=0; i < result.length; i++){
+// 				if(result[i].positive == 0){
+// 					await negetiveArr.push(result[i].tagID);
+// 				}else{
+// 					await positiveArr.push(result[i].tagID);
+// 				}
+// 			}
+// 		});
+// 		console.log(positiveArr);
+// 		console.log(negetiveArr);
 
-		let originalID = await findOriginal(connection, {positive:positiveArr, negetive:negetiveArr});
-		await selectOriginal(connection, originalID, async (result) => {
-			await selectOriginalTags(connection, originalID, async (tags) => {
-				console.log(tags);
-				console.log(result);
-				result.tags = tags;
+// 		let originalID = await findOriginal(connection, {positive:positiveArr, negetive:negetiveArr});
+// 		await selectOriginal(connection, originalID, async (result) => {
+// 			await selectOriginalTags(connection, originalID, async (tags) => {
+// 				console.log(tags);
+// 				console.log(result);
+// 				result.tags = tags;
 
-				var obj = JSON.parse(fs.readFileSync('./modules/template2.json', 'utf8'));
-				result.description = await templateParse( obj['start'], obj );
+// 				var obj = JSON.parse(fs.readFileSync('./modules/template2.json', 'utf8'));
+// 				result.description = await templateParse( obj['start'], obj );
 
-				await callback(result);
-			})
-		});
-	} catch (e) {
-		console.log(e);
-		return 0;
-	}
-};
+// 				await callback(result);
+// 			})
+// 		});
+// 	} catch (e) {
+// 		console.log(e);
+// 		return 0;
+// 	}
+// };
 async function selectOriginal(connection, originalID, callback){
 	try {
 		let query = 'SELECT * FROM original WHERE id = ?';
