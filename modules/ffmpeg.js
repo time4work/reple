@@ -1,61 +1,110 @@
 
 const ffmpeg = require('fluent-ffmpeg');
-const dir = './screens/';
 
-module.exports.makeThumbs = async function(url, callback) {
-    console.log('start getScreenShoot ffmpeg');
+// var dir = './screens/';
+var _dir;
 
+module.exports.makeBaseThumb = async function(url, namePrefix, dir, callback) {
+	console.log(' - makeBaseThumb -');
+	_dir = dir;
+    var filename,
+    	duration;
+
+    return await new Promise(async function(resolve, reject) {
+    	await takeScreen(url, namePrefix+'_base', '240x180', '50%' , async (screen)=>{
+			if(callback){
+				await callback({
+					name: screen.name,
+					duration: screen.duration
+				});
+			}
+			// return new Promise(function(resolve, reject) {
+		        resolve({
+					name: screen.name,
+					duration: screen.duration
+				});
+		    // })
+    	});
+	}).then((r)=>{
+	    console.log(" = makeBaseThumb = ");
+    	console.log(r);
+        return r;
+	});
+}
+module.exports.makeBigThumb = async function(url, namePrefix, dir, callback) {
+	console.log(' - makeBigThumb -');
+	_dir = dir;
+    var filename,
+    	duration;
+
+    return await new Promise(async function(resolve, reject) {
+    	await takeScreen(url, namePrefix+'_big', '432x324', '50%' , async (screen)=>{
+			if(callback){
+				await callback({
+					name: screen.name,
+					duration: screen.duration
+				});
+			}
+			// return new Promise(function(resolve, reject) {
+		        resolve({
+					name: screen.name,
+					duration: screen.duration
+				});
+		    // });
+    	});
+	}).then((r)=>{
+	    console.log(" = makeBigThumb = ");
+    	console.log(r);
+        return r;
+	});
+}
+module.exports.makeSimpleThumbs = async function(url, nameprefix, dir, callback) {
+    console.log(' - makeSimpleThumbs - ');
+	_dir = dir;
     var filenames,
     	duration;
 
-    // var result = 
-    console.log(" = video screens = ");
-    await Promise.resolve(
-    await takeScreen(url, 1, '15%' , async (screen1)=>{
-    	await takeScreen(url, 2, '30%' , async (screen2)=>{
-	    	await takeScreen(url, 3, '45%' , async (screen3)=>{
-		    	await takeScreen(url, 4, '60%' , async (screen4)=>{
-		    		await takeScreen(url, 5, '75%' , async (screen5)=>{
-						if(callback){
-							names = [
+    // return await Promise.resolve(
+    return new Promise(async function(resolve, reject) {
+	    await takeScreen(url, nameprefix+"_1", '240x180', '15%' , async (screen1)=>{
+	    	await takeScreen(url, nameprefix+"_2", '240x180', '30%' , async (screen2)=>{
+		    	await takeScreen(url, nameprefix+"_3", '240x180', '45%' , async (screen3)=>{
+			    	await takeScreen(url, nameprefix+"_4", '240x180', '60%' , async (screen4)=>{
+			    		await takeScreen(url, nameprefix+"_5", '240x180', '75%' , async (screen5)=>{
+
+							let names = [
 								screen1.name, 
 								screen2.name, 
 								screen3.name, 
 								screen4.name, 
 								screen5.name,
 							];
-							await callback({
-								names: names,
-								duration: screen1.duration
-							});
-						}
-						return new Promise(function(resolve, reject) {
-					        resolve({
-								names: names,
-								duration: screen1.duration
-							});
-					    })
-						// return {
-						// 		names: names,
-						// 		duration: screen1.duration
-						// 	}
-		    		});
-		    	});
-		    });
-    	});
-    // });
-	})).then((r)=>{
-	    console.log(" = video screens = ");
+							console.log('names');
+							console.log(names);
+
+							if(callback){
+								await callback({
+									names: names,
+									duration: screen1.duration
+								});
+							}
+							// return new Promise(function(resolve, reject) {
+						        resolve({
+									names: names,
+									duration: screen1.duration
+								});
+						    // });
+			    		});
+			    	});
+			    });
+	    	});
+		});
+	})
+	.then((r)=>{
+	    console.log(" = makeSimpleThumbs = ");
     	console.log(r);
         return r;
 	});
-
-	// if(callback)
-	// 	await callback(result);
-		// await callback({
-		// 	filenames : filenames,
-		// 	duration: duration
-		// });
 }
 function makeid(length) {
 	var text = "";
@@ -68,11 +117,11 @@ function makeid(length) {
 
 	return text;
 }
-async function takeScreen(url, prefix, timemark, callback){
+async function takeScreen(url, prefix, size, timemark, callback){
 	var duration;
 	var name;
 
-	await new Promise((resolve, reject) => {
+	return await new Promise((resolve, reject) => {
 		ffmpeg(url)
 			.videoBitrate('800k')
 			.on('codecData', function(data) {
@@ -95,9 +144,10 @@ async function takeScreen(url, prefix, timemark, callback){
 			})
 			.takeScreenshots({
 				count: 1,
-				filename: 'thumb_'+ makeid(7) +'_%w_'+prefix,
+				size: size,
+				filename: 'thumb_'+prefix,
 				timemarks: [ timemark ]
-			}, dir);
+			}, _dir);
 	}).then(
 		async result => {
 			// первая функция-обработчик - запустится при вызове resolve
@@ -111,6 +161,7 @@ async function takeScreen(url, prefix, timemark, callback){
 		error => {
 			// вторая функция - запустится при вызове reject
 			console.log("Rejected ffmpeg Promise: " + error.message); // error - аргумент reject
+			return 0;
 	    }
 	);
 }

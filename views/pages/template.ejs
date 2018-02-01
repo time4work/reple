@@ -25,6 +25,7 @@
 				<div class='block'>
 					<form id='template-form'>
 						<h1>Template details</h1>
+
 						<p class="name input">
 							<span class="label-title">Name</span>
 							<input type="text"  id='name-input' value="<%= scope.tmpl.name %>">
@@ -41,71 +42,93 @@
 						</div>
 					</form>
 					<hr>
+					<div class="description-box">
+						<h4>Key Usage :</h4>
+						<p>use &#60; key &#62; syntax to generate value by the key</p>
+						<p>key must have no spaces</p>
+						<p>dont use punctuation mark symbols</p>
+						<h4>Example :</h4>
+						<p>&#60;adj&#62; = "super"</p>
+						<p>&#60;test&#62; = "&#60;adj&#62; value example"</p>
+						<p>generates:</p>
+						<p>&#60;test&#62; = "super value example"</p>
+						<h4>Beware Of Recursion:</h4>
+						<p>&#60;test&#62; = "... &#60;test&#62; ..."</p>
+					</div>
+					<hr>
 					<div class="templates_mng">
 							<p class="templates input">
 								<span class="label-title">templates</span>
 							<p>
-							<p class='input-line'>
-								<label>Key</label>
-								<input type="text" name="" id='tmpl-key'>
-							</p>
-							<p class='input-line'>
-								<label>Value</label>
-								<input type="text" name="" id='tmpl-val'>
-							</p>
-							<p class='input-line txt-cent'>
-								<span>Tags Condition</span>
-							</p>
-							<hr>
-							<div class="tags select syns">
-								<p class="tags">
-									<p>positive</p>
-									<select multiple id='assocs-tag'>
-									</select>
+							<div class="shadow-wrapper">
+								<p class='input-line'>
+									<label>Key</label>
+									<input type="text" name="" id='tmpl-key' placeholder="new_key">
 								</p>
-								<p>
-									<select id='syn-tag-select' onchange="tagSelectFunc();">
-									<% scope.tags.forEach(function(tag, iter){ %>
-												<option tag-id='<%= tag.id %>'><%= tag.name %></option>
-									<% }); %>
-									</select>
-									<button class="btn btn-success add-more assocs-tag" select-id='assocs-tag' type="button">
-										<i class="glyphicon glyphicon-plus full-width"></i> 
-									</button>
+								<p class='input-line'>
+									<label>Value</label>
+									<input type="text" name="" id='tmpl-val' placeholder="text with <other_keys>">
 								</p>
 							</div>
-							<hr>
-							<div class="tags select stop">
-								<p class="tags">
-									<p>negative</p>
-									<select multiple id='stop-tag'>
-									</select>
+<!-- tag-condition -->
+							<div class="shadow-wrapper">
+
+								<p class='input-line txt-cent'>
+									<span>Tags Condition</span>
 								</p>
+								<hr>
+								<div class="tags select syns">
+									<p class="tags">
+										<p>positive Conditions</p>
+										<select multiple id='assocs-tag'>
+										</select>
+									</p>
+									<p>
+										<select id='syn-tag-select' onchange="tagSelectFunc();">
+										<% scope.tags.forEach(function(tag, iter){ %>
+													<option tag-id='<%= tag.id %>'><%= tag.name %></option>
+										<% }); %>
+										</select>
+										<button class="btn btn-success add-more assocs-tag" select-id='assocs-tag' type="button">
+											<i class="glyphicon glyphicon-plus full-width"></i> 
+										</button>
+									</p>
+								</div>
+								<hr>
+								<div class="tags select stop">
+									<p class="tags">
+										<p>negative Condition</p>
+										<select multiple id='stop-tag'>
+										</select>
+									</p>
+									<p>
+										<select id='stop-tag-select' onchange="tagSelectFunc();">
+										<% scope.tags.forEach(function(tag, iter){ %>
+													<option tag-id='<%= tag.id %>'><%= tag.name %></option>
+										<% }); %>
+										</select>
+										<button class="btn btn-success add-more stop-tag" select-id='stop-tag' type="button">
+											<i class="glyphicon glyphicon-plus full-width"></i> 
+										</button>
+									</p>
+								</div>
+								<hr>
+								<!-- <p class='radio-line'>
+									<span>
+										<input type="radio" name="assoc" value="negative"> 
+										<span>negative</span> 
+									</span>	
+									<span>
+										<input type="radio" name="assoc" value="positive"> 
+										<span>positive</span>
+									</span>							
+								</p> -->
 								<p>
-									<select id='stop-tag-select' onchange="tagSelectFunc();">
-									<% scope.tags.forEach(function(tag, iter){ %>
-												<option tag-id='<%= tag.id %>'><%= tag.name %></option>
-									<% }); %>
-									</select>
-									<button class="btn btn-success add-more stop-tag" select-id='stop-tag' type="button">
-										<i class="glyphicon glyphicon-plus full-width"></i> 
-									</button>
+									<button class="btn btn-success add-tmpl full-width" select-id='template-text' type="button"><i class="glyphicon glyphicon-plus full-width"></i></button>
 								</p>
-							</div>
-							<hr>
-							<!-- <p class='radio-line'>
-								<span>
-									<input type="radio" name="assoc" value="negative"> 
-									<span>negative</span> 
-								</span>	
-								<span>
-									<input type="radio" name="assoc" value="positive"> 
-									<span>positive</span>
-								</span>							
-							</p> -->
-							<p>
-								<button class="btn btn-success add-tmpl full-width" select-id='template-text' type="button"><i class="glyphicon glyphicon-plus full-width"></i></button>
-							</p>
+
+							</div> <!-- tag-condition -->
+
 						</p>
 					</div>	
 					<hr>

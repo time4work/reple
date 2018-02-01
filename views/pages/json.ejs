@@ -8,6 +8,22 @@
 
         <% include ../partials/topnav.ejs %>
         
+        <section id='json-list'>
+            <ul>
+            <% scope.jsons.forEach(function(json, iter) {  %>
+                <li json-id='<%=json.id%>' id='json-obj-<%=json.id%>'>
+                    <p> 
+                        <div class="spinner"></div>
+                        <span class='size'>( <%=json.size%> )</span>
+                        <%=json.name%>
+                        <span class='date'>[ <%=json.date%> ]</span>
+                    </p>
+                </li>
+                
+            <% }); %>
+            </ul>
+        </section>
+
         <section id="jsonpage">
             <div class="container">
                 <div class="title">
@@ -33,4 +49,60 @@
             </div>
         </section>
     </body>
+    <script>
+        var ProcessInProgressFlag = false;
+        var timerTrigger;
+
+        function checkStatus(){
+            let data = {
+                type: "json.import.process.check"
+            };
+            ajax('/json/', data, (result)=>{
+                console.log(result);
+                let id = result.resp.id;
+
+                if(id > -1){
+                    ProcessInProgressFlag = true;
+                    $('li#json-obj-'+id).addClass('inProgress');
+                }else{
+                    ProcessInProgressFlag = false;
+                    $('#json-list li').removeClass('inProgress');
+                }
+                console.log('ProcessActivity '+ProcessInProgressFlag);
+            });
+        }
+
+        // function timer(key){
+        //     key = setInterval(function() { 
+        //         checkStatus();
+        //     }, 3000);
+        // }
+//////////////////////////////////////
+/////////////////////OnDomReadyBegin/
+        $(function(){
+
+            var timerId = setInterval(function() { 
+                checkStatus();
+            }, 3000);
+
+            $("#json-list li").on('click', function(e){
+                console.log(e.currentTarget);
+                if(!ProcessInProgressFlag){
+                    // timer(timerTrigger);
+                    
+                    let data = {
+                        type: "json.file.import",
+                        id: $(e.currentTarget).attr('json-id')
+                    };
+                    ajax('/json/', data, (result)=>{
+                        console.log(result);
+                        // clearInterval(timerTrigger);
+                    });
+                }
+            });
+
+        });
+/////////////////////OnDomReadyEnd//
+///////////////////////////////////
+    </script>
 </html>

@@ -1,5 +1,6 @@
 /////////////////////////////////////////////
 const fs 		= require('fs');
+const async 	= require('async');
 const PythonShell = require('python-shell');
 
 const MYSQL 	= require('./mysql').connection;
@@ -629,10 +630,70 @@ module.exports.createProject = async (name, callback) => {
 		return 0;
 	}
 }
+module.exports.createLibraryKey = async (name, callback) => {
+	try {
+		var query = "INSERT INTO libraryKey (`name`) VALUES (?)";
+		let result = await myquery(query, [ name ]);
+
+		if(callback)
+			await callback(result);
+		return result;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.selectLibraryItems = async (callback) => {
+	try {
+		var query = ""
+			+ " SELECT r.id, r.name as `key`, res2.value "
+			+ " FROM replecon.libraryKey r "
+			+ " left join "
+			+ " 	( "
+			+ " 		select * "
+			+ " 		from  replecon.libraryRelation "
+			+ " 	) as res on res.keyID = r.id  "
+			+ " left join "
+			+ " ( "
+			+ " 	select * "
+			+ " 	from  replecon.libraryValue "
+			+ " ) as res2 on res2.id = res.valueID ";
+		let result = await myquery(query, []);
+		// console.log(result);
+		let list = [...new Set(result.map(item => item.key))]
+		.map((key)=>{
+			return {key: key, value: []}
+		});
+		// console.log(list);
+		result.forEach((item,i,arr)=>{
+			let _key = result[i].key;
+
+			for(var j=0; j<list.length; j++){
+				if( list[j].key==_key ){
+					list[j].id = item.id;
+					if(item.value!=null)
+						list[j].value.push( item.value);
+				}
+			}
+		});
+		console.log(list);
+
+
+		if(callback)
+			await callback(list);
+		return list;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
 module.exports.selectProjectReadyObjects = async (objects, callback) => {
 	var x = 0;
 	for(var i=0; i<objects.length; i++){
-		if( objects[i].DataLink2 ) x++;
+		if( objects[i].DataLink2 && objects[i].DataLink3 && objects[i].DataLink4 && objects[i].DataText3 ) 
+			x++;
 	}
 	if(callback)
 		await callback(x);
@@ -655,46 +716,6 @@ module.exports.pageScraper = async (page, callback) => {
 		});
 		console.log();
 		// return result;
-	} catch (e) {
-		console.log(e);
-		return 0;
-	}
-}
-async function pageScraper(page, callback) {
-	try {
-		console.log('pageScraper');
-		var link = await scraperModule.getLink(page);
-		console.log('link');
-		console.log(link);
-		console.log();
-		if(!link) return;
-		
-		var result = await ffmpegModule.makeThumbs(link, async (res)=>{
-			console.log("filenames");
-			console.log(res);
-			if(callback)
-				await callback(res);
-		});
-		console.log();
-		// return result;
-	} catch (e) {
-		console.log(e);
-		return 0;
-	}
-}
-async function addThumbsToObject(objectID, text) {
-	try {
-		let query = "UPDATE object"
-		+ " SET DataLink2 = ?"
-		+ " WHERE id = ? ";
-		let result = await myquery(query, [ text , objectID ]);
-		console.log('addThumbsToObject');
-		console.log(result);
-
-		// if(callback)
-		// 	await callback(result);
-		return result;
-
 	} catch (e) {
 		console.log(e);
 		return 0;
@@ -2510,31 +2531,106 @@ async function spinText(text, callback){ // !
 	}
 }
 /////////////////////////////////////////////
-module.exports.loadJson = async function(json, callback){ // !
-	// var connection 	= await ASYNSQL(); // !
-	var connection 		= await POOLCON();
-	// console.log(json.length);
-	for (var iter=0; iter<json.length; iter++) {
-		let item = json[iter];
-		console.log(" - - - - - - - - - - - - JSON ");
-		console.log(" -[ "+iter+" ] - - - - - JSON ");
-		console.log(" - - - - - - - - - - - - JSON ");
-		try {
-			if(await uniqItem(connection,item)){
-				let ids = await magic(connection,item); // !
-				console.log(ids);
-				await originalRelation(connection,ids); // !
-			}
+module.exports.getJsons = async function(callback){
+	try {
+		let query = "SELECT * FROM jsonFiles";
+		let result = await myquery( query, [] );
 
-		} catch (e) {
-			console.log(e);
-			// return 0;
-		}
+		console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
 	}
-	await connection.end();
-	console.log(' Json Loaded ! ');
+}
+/////////////////////////////////////////////
+module.exports.getJson = async function(id, callback){
+	try {
+		await getJsonName(id, async (obj)=>{
+			fs.readFile('./json/'+obj[0].name, async (err, data) => {  
+		    	if (err) throw err;
+
+    			if(callback)
+					await callback( JSON.parse(data) );
+			});
+		});
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+async function getJsonName(id, callback){
+	try {
+		let query = "SELECT name FROM jsonFiles WHERE id = ?";
+		let result = await myquery( query, [id] );
+
+		console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+async function saveJson(name,date,size,callback){
+	try {
+		let query = "INSERT INTO jsonFiles (`name`,`date`,`size`) VALUES (?,?,?)";
+		let result = await myquery( query, [name,date,size] );
+
+		console.log(result);
+		if(callback)
+			await callback(result);
+		return result;
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.saveJson = async function(json, name, callback){
+	let length = json.length;
+	let data = JSON.stringify(json);  
+	var date = new Date();
+	var _name = "./json/"+name;
+
+	await fs.writeFileSync(_name, data); 
+	await saveJson(name,date,length);
+
+	console.log(' Json Saaved ! ');
 	if(callback)
 		await callback();
+}
+/////////////////////////////////////////////
+module.exports.importJson = async function(json, callback){ // !
+	// var connection 	= await ASYNSQL(); // !
+	try {
+		var connection 		= await POOLCON();
+		// console.log(json.length);
+		for (var iter=0; iter<json.length; iter++) {
+			let item = json[iter];
+			console.log(" - - - - - - - - - - - - JSON ");
+			console.log(" -[ "+iter+" ] - - - - - JSON ");
+			console.log(" - - - - - - - - - - - - JSON ");
+				if(await uniqItem(connection,item)){
+					let ids = await magic(connection,item); // !
+					console.log(ids);
+					await originalRelation(connection,ids); // !
+				}
+
+		}
+		console.log(' Json Loaded ! ');
+		if(callback)
+			await callback();
+		await connection.end();
+	} catch (e) {
+		console.log(e);
+	}
 };
 async function uniqItem(connection, item){
 	console.log(' - uniqItem');

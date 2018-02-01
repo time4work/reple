@@ -15,9 +15,9 @@
     <ul class='object-menu'>
       <li>
           <i class="fa fa-camera-retro" aria-hidden="true"></i>
-        <a href="#" onclick='makeThumbs(event)'>
-          <span>make thumbs</span>
-        </a>
+          <span>Make Thumbs</span>
+          <button onclick='makeThumbs(event)'>start</button>
+          <button onclick='stopMakeThumbs(event)'>stop</button>
       </li>
       <li>
           <i class="fa fa-eye" aria-hidden="true"></i>
@@ -65,6 +65,20 @@
 </body>
 <script>
   const projectID = <%=scope.project.id%>;
+  function stopMakeThumbs(event){
+    if (event.preventDefault) event.preventDefault();
+    console.log('click');
+    data = {};
+    data.type = 'process.thumbs.make.terminate';
+    if( confirm("are you sure?") ){
+      // blockTheKraken();
+      ajax('/project/'+projectID+'/objects/', data, (result)=>{
+        console.log(result);
+        // releaseTheKraken();
+        // alert('finish');
+      });
+    }
+  }
   function makeThumbs(event){
     if (event.preventDefault) event.preventDefault();
     console.log('click');
@@ -72,10 +86,10 @@
     data.type = 'objects.thumbs.make';
 
     if( confirm("are you sure?") ){
-      blockTheKraken();
+      // blockTheKraken();
       ajax('/project/'+projectID+'/objects/', data, (result)=>{
         console.log(result);
-        releaseTheKraken();
+        // releaseTheKraken();
         alert('finish');
       });
     }

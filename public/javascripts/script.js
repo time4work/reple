@@ -198,12 +198,15 @@ function jsonForm(e) {
     blockTheKraken("<span>loading . . .</span>");
 
     var file = e.target.getElementsByTagName("input")[0].files[0];
+    console.log(file.name);
     var reader = new FileReader();
     var xhr = new XMLHttpRequest();
     if (file.type == "application/json" ) {
         reader.readAsText(file);
         reader.onload = (e) => {
                 var body = 'data=' + encodeURIComponent(e.target.result);
+                body += '&type=json.file.save';
+                body += '&name='+file.name;
                 xhr.open("POST", '/json', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onprogress = function (e) {

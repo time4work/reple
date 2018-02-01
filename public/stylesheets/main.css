@@ -341,6 +341,65 @@ section#tags-page h1{
     color: #ccc;
     text-align: left;
 }
+h1.page-title{
+    letter-spacing: 10px;
+    padding-top: 70px;
+    padding-bottom: 70px;
+    color: #ccc;
+    text-align: left;
+    text-transform: capitalize;
+}
+.shadow-wrapper {
+    box-shadow: 8px -4px 9px 0px #ececec;
+    padding: 5px;
+    margin: 10px 0px;
+}
+section#library .library-wrapper {
+    position: relative;
+    overflow-x: scroll;
+    padding: 5px;   
+}
+section#library .library-titles {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+section#library .library-key {
+    padding-left: 24px;
+    padding-right: 24px;
+}
+section#library .library-item-delete button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-radius: 7px;
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding: 0px 4px;
+    font-size: 20px;
+}
+section#library .labrary-value-list input {
+    padding-left: 10px;
+    padding-right: 2px;
+}
+section#library .library-key p {
+    margin-bottom: -15px;
+}
+section#library li.library-item {
+    position: relative;
+    display: inline-table;
+    min-width: 200px;
+    padding: 5px;
+    margin-right: 5px;
+    box-shadow: 0px 0px 5px #c54615;
+    outline: 1px solid #c3c3c3;
+}
+section#library .library-key span {
+    font-size: 17px;
+    font-weight: bold;
+}
+
 section#originals-page h3 {
     color: #ccc;
     /*text-align: right;*/
@@ -350,6 +409,8 @@ section#jsonpage {
     height: 100vh;
     width: 100%;
     display: table;
+    position: absolute;
+    top: 0;
 }
 section#rewrite-page > div,
 section#jsonpage > div{
@@ -864,6 +925,55 @@ p.input{
 .details-body form > * {
     margin: 30px 0;
 }
+.description-box{
+    background: #e8e8e8;
+    padding: 10px 20px;
+}
+.description-box h4{
+    font-weight: bold;
+    color: #949494;
+    text-shadow: -2px -2px 0px white;
+    text-transform: capitalize;
+}
+.description-box p {
+    letter-spacing: 1px;
+}
+section#json-list {
+    float: right;
+    /* margin: 5px; */
+    margin-right: 14px;
+    position: fixed;
+    top: 38px;
+    right: 0;
+    height: calc(100vh - 73px);
+    overflow-y: scroll;
+    padding: 5px;
+    padding-right: 16px;
+    z-index: 2;
+}
+section#json-list li {
+    outline: 1px solid #ff7f00;
+    padding: 6px 15px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    text-align: right;
+}
+section#json-list li:hover {
+    background: bisque;
+}
+section#json-list p {
+    margin: 0;
+}
+section#json-list span.date {
+    font-weight: bold;
+    color: brown;
+}
+section#json-list span.size {
+    font-weight: bold;
+    color: green;
+    float: left;
+    margin: 0 10px;
+}
 p.proj-tags span {
     border-radius: 5px;
     padding: 1px 5px;
@@ -872,9 +982,11 @@ p.proj-tags span {
 }
 p.assoc-tags span{
     background: #d5f5ff;
+    display: inline-block;
 }
 p.stop-tags span{
     background: #fad7d7;
+    display: inline-block;
 }
 .details-body input,
 .details-body textarea{
@@ -978,4 +1090,35 @@ div.tmpls.select span.tag.label.label-info {
 }
 div.tmpls.select span.tag.label.label-info > span {
     float: right;
+}
+
+div.spinner {
+    float: left;
+    width: 20px;
+    height: 20px;
+    background-color: #333;
+    display: inline-block;
+    /*margin: 100px auto;*/
+}
+section#json-list li.inProgress div.spinner{
+    -webkit-animation: sk-rotateplane 1.2s infinite ease-in-out;
+    animation: sk-rotateplane 1.2s infinite ease-in-out;
+}
+@-webkit-keyframes sk-rotateplane {
+    0% { -webkit-transform: perspective(120px) }
+    50% { -webkit-transform: perspective(120px) rotateY(180deg) }
+    100% { -webkit-transform: perspective(120px) rotateY(180deg)  rotateX(180deg) }
+}
+
+@keyframes sk-rotateplane {
+    0% { 
+        transform: perspective(120px) rotateX(0deg) rotateY(0deg);
+        -webkit-transform: perspective(120px) rotateX(0deg) rotateY(0deg) 
+    } 50% { 
+        transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg);
+        -webkit-transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg) 
+    } 100% { 
+        transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg);
+        -webkit-transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg);
+    }
 }

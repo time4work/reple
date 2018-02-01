@@ -8,10 +8,16 @@ const expressLogging= require('express-logging');
 const logger 		= require('logops');
 const bodyParser 	= require('body-parser');
 const helpers 		= require('./helpers');
+const myThumbMaker 	= require('./thumb-maker');
+/////////////////////////////////////////////
+const thumbMaker 	= new myThumbMaker('./screens/');
+/////////////////////////////////////////////
+var JsonImportProgress = false;
+var JsonImportId = -1;
 /////////////////////////////////////////////
 module.exports = function(params){
 	var dir 		= params.rootdir;
-	var port 		= process.env.port || 5000;
+	var port 		= process.env.port || 5002;
 	var app 		= express();
 
 	app.set('port', (process.env.PORT || port) );
@@ -160,16 +166,18 @@ module.exports = function(params){
 
 		switch(request.body.type){
 			case 'objects.thumbs.make':
-				// await setTimeout(function(){
-				// 	response.send({status: "ok"});
-				// }, 1000);
-
-				await helpers.selectProjectObjects(project_id, async (result) => {
-					await helpers.makeObjectThumbs(result, async () => {
-						response.send({status: "ok"});
-					});
+				response.send({status: "ok"});
+				await helpers.selectProjectObjects(project_id, async (objects) => {
+					// console.log(objects);
+					await thumbMaker.make(objects);
+					// await helpers.makeObjectThumbs(result, async () => {
+					// 	response.send({status: "ok"});
+					// });
 				});
-				// pageScraper
+				break;
+			case 'process.thumbs.make.terminate':
+				thumbMaker.kill();
+				response.send({status: "ok"});
 				break;
 			default:
 				response.send({err: "opps, wrong type"});
@@ -433,7 +441,7 @@ module.exports = function(params){
 
 				await helpers.saveTagChanges(tag_id, name, syn_arr, ()=>{
 					response.redirect('/tag/'+tag_id);
-				})
+				});
 				break;
 			// case "newTempl":
 			// 	console.log("newTemplate");
@@ -462,16 +470,53 @@ module.exports = function(params){
 		}
 	});
 
-	app.get('/json', (request, response) => {
-		response.render('pages/json');
+	app.get('/json', async (request, response) => {
+		await helpers.getJsons( async (files) => {
+		response.render('pages/json',{scope:{jsons: files}});
+		});
+		
 	});
 	app.post('/json', async (request, response) => {
-		let obj = await JSON.parse(request.body.data);
-		// response.redirect('/json/');
-		response.send({resp: 'loaded'});
+		switch(request.body.type){
+			case "json.file.save":
+				let obj = await JSON.parse(request.body.data);
+				let name = request.body.name;
+				await helpers.saveJson(obj, name, async () => {
+					response.send({resp: 'json loaded'});
+				});
+				break;
+			case "json.file.import":
+				if(!JsonImportProgress){
+					let jsonId = request.body.id;
+					await helpers.getJson(jsonId, async (obj) => {
+						JsonImportProgress = true;
+						JsonImportId = jsonId;
 
-		await helpers.loadJson(obj, async (result) => {});
-		console.log('await end');
+						response.send({resp: 'import json data started', id:JsonImportId});
+						
+						await helpers.importJson(obj, async (result) => {
+							JsonImportProgress = false;
+							JsonImportId = -1;
+						});
+					});
+				}else{
+					response.send({resp: 'import process already in Progress', id:JsonImportId});
+				}
+
+				break;
+			case "json.import.process.check":
+				if(!JsonImportProgress){
+					response.send({resp: {'id': -1}});
+				} else {
+					response.send({resp: {'id': JsonImportId}});
+				}
+				break;
+			case "json.file.del":
+				break;
+			default:
+				console.log(" O O O P S . . . ");
+				response.send({err:'o o o p s'});
+		}
 	});
 
 	app.get('/generator', async (request, response) => {
@@ -513,6 +558,32 @@ module.exports = function(params){
 		console.log(' < generator >');
 	});
 
+
+	app.get('/library', async (request, response) => {
+		helpers.selectLibraryItems(async (result)=>{
+			response.render('pages/library', {scope:{
+				library: result
+			}});
+		});
+		
+	});
+	app.post('/library', async (request, response) => {
+		switch(request.body.type){
+			case "library.key.create":
+				let name = request.body.name;
+				if(name){
+					helpers.createLibraryKey(name, async (result)=>{
+						response.send({response:'ok'});
+					});
+				}else response.send({err:'new key name err'});
+				break;
+			// case "object.transfiguration":
+			// 	break;
+			default:
+				console.log(" O O O P S . . . ");
+				response.send({err:'o o o p s'});
+		}
+	});
 
 	app.get('/query', async (request, response) => {
 		response.render('pages/query');

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <% include ../partials/header.ejs %>
+        <link rel="stylesheet" href="http://bootstrap-tagsinput.github.io/bootstrap-tagsinput/dist/bootstrap-tagsinput.css">
+        <script src="http://bootstrap-tagsinput.github.io/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js"></script>
+    </head>
+    <body np-app="Reple">
+        <% include ../partials/topnav.ejs %>
+        <div class="col-md-offset-2 col-md-8">
+            <h1 class='page-title'>template key library</h1>
+        </div>
+        <hr>
+        <section id="library" class='col-md-offset-1 col-md-10'>
+            <div class="head-menu">
+                <ul>
+                    <li><a href="#" onclick='createKey(this,event)'>Create New Key</a></li>
+                </ul>
+            </div>
+            <div class="library-wrapper">
+<!--                 <div class="library-titles">
+                    <p><span class="label-title">key</span></p>
+                    <p><span class="label-title">value-list</span></p>
+                </div> -->
+                <ul>
+                    <% scope.library.forEach(function(item) { %>
+                    <li class='library-item' key-id='<%=item.id%>'>
+                        <div class="library-item-delete">
+                            <button class="btn btn-danger" select-id='<%=item.id%>' type="button">
+                                    <i class="fa fa-trash" aria-hidden="true"></i> 
+                            </button>
+                        </div>
+                        <div class="library-key">
+                            <p>
+                                <span>Key: </span><%= item.key %>
+                            </p>
+                        </div>
+                        <hr>
+                        <div class="labrary-value-list">
+                            <ul>
+                                <% item.value.forEach(function(val, iter) { %>
+                                    <li><%=val%></li>
+                                <% }); %>
+                            </ul>
+                            
+                            <p>
+                                <input type="text" placeholder="new value">
+                                <button class="btn btn-success add-more " select-id='' type="button">
+                                    <i class="glyphicon glyphicon-plus full-width"></i> 
+                                </button>
+                            </p>
+                        </div>
+                    </li>
+                    <% }) %>
+                </ul>
+            </div>
+        </section>
+    </body>
+    <script>
+    //////////////////////////////////////
+    /////////////////////OnDomReadyBegin/
+    function createKey(el,event){
+    if (event.preventDefault) event.preventDefault();
+    console.log(el);
+    console.log(event);
+    var name = prompt('new key name');
+    if(!name)return;
+    console.log("new key: "+name);
+    let data = {
+    type: "library.key.create",
+    name: name
+    };
+    ajax('/library/', data, (result)=>{
+    console.log(result);
+    });
+    }
+    $(function(){
+    });
+    /////////////////////OnDomReadyEnd//
+    ///////////////////////////////////
+    </script>
+</html>

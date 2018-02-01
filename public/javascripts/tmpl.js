@@ -44,9 +44,9 @@ function parseTmplObj(json){
 	   tmpls[keys[0]] = elem[keys[0]];
 	});
 	for(var i=0; i<tmpl_pack.length; i++){
-		var key = tmpl_pack[i]['keyword']
+		var key = tmpl_pack[i]['keyword'];
 		console.log(key);
-		var val = tmpl_pack[i]['val']
+		var val = tmpl_pack[i]['val'];
 		console.log(val);
 		tmpls[key].push(val);
 	}

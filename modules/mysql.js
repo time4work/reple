@@ -28,7 +28,7 @@ module.exports.pool = async function(){
 		user     : process.env.DB_USER || 'test',
 		password : process.env.DB_PASSWORD || 'test',
 		database : process.env.DB_DATABASE || 'replecon',
-	    // connectionLimit : 10000, //important
+	    connectionLimit : 500000, //important
 	    debug    : false
 	});
 };

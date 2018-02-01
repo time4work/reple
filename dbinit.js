@@ -15,6 +15,7 @@ var queries = {
 	'tag': 			'CREATE TABLE IF NOT EXISTS replecon.tag (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), flag INT(4), UNIQUE(name) )ENGINE = InnoDB',
 	'original': 	'CREATE TABLE IF NOT EXISTS replecon.original (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), link VARCHAR(600), video VARCHAR(600),  description VARCHAR(1500))ENGINE = InnoDB',
 	'template': 	"CREATE TABLE IF NOT EXISTS replecon.template (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(255), UNIQUE(name))ENGINE = InnoDB",
+	'jsonFiles': 	'CREATE TABLE IF NOT EXISTS replecon.jsonFiles (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50) NOT NULL, size INT(10) NOT NULL, date VARCHAR(20) NOT NULL)ENGINE = InnoDB',
 
 	// 'project-db': 	"CREATE TABLE IF NOT EXISTS replecon.projectDB (id INT AUTO_INCREMENT PRIMARY KEY,host VARCHAR(255),port VARCHAR(255),user VARCHAR(255),password VARCHAR(255),dbname VARCHAR(255))ENGINE = InnoDB",
 	'project-db':
@@ -75,6 +76,11 @@ var queries = {
 	'template-condition': 	"CREATE TABLE IF NOT EXISTS replecon.templateCondition(id INT AUTO_INCREMENT PRIMARY KEY, tagID int(4) NOT NULL,tmplKeyID int(4) NOT NULL,positive BOOLEAN NOT NULL,FOREIGN KEY (tagID) REFERENCES replecon.tag(id),FOREIGN KEY (tmplKeyID) REFERENCES replecon.templateKey(id))ENGINE = InnoDB",
 	// 'tag-template': 'CREATE TABLE IF NOT EXISTS replecon.tagTemplates (id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255), val VARCHAR(600), flag INT(4) )ENGINE = InnoDB',
 
+	'library-key': "CREATE TABLE IF NOT EXISTS replecon.libraryKey(id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(25) NOT NULL)ENGINE = InnoDB",
+	'library-value': "CREATE TABLE IF NOT EXISTS replecon.libraryValue(id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(255) NOT NULL)ENGINE = InnoDB",
+	'relation-library-key-value': "CREATE TABLE IF NOT EXISTS replecon.libraryRelation(id INT AUTO_INCREMENT PRIMARY KEY, keyID int(4) NOT NULL, valueID int(4) NOT NULL, FOREIGN KEY (keyID) REFERENCES replecon.libraryKey(id),FOREIGN KEY (valueID) REFERENCES replecon.libraryValue(id))ENGINE = InnoDB",
+	// 'relation-library-template': "CREATE TABLE IF NOT EXISTS replecon.relationLibraryTmpl(id INT AUTO_INCREMENT PRIMARY KEY,  )ENGINE = InnoDB",
+
 	'relation-tag-original': 	'CREATE TABLE IF NOT EXISTS replecon.relationTagOriginal (id INT AUTO_INCREMENT PRIMARY KEY, tagID INT(4) NOT NULL,  originalID INT(4) NOT NULL, FOREIGN KEY (tagID) REFERENCES replecon.tag(id), FOREIGN KEY (originalID) REFERENCES replecon.original(id))ENGINE = InnoDB',
 	'relation-tag-project': 	'CREATE TABLE IF NOT EXISTS replecon.relationTagProject (id INT AUTO_INCREMENT PRIMARY KEY, tagID INT(4) NOT NULL,  projectID INT(4) NOT NULL, positive BOOLEAN NOT NULL , FOREIGN KEY (projectID) REFERENCES replecon.project(id), FOREIGN KEY (tagID) REFERENCES replecon.tag(id))ENGINE = InnoDB',
 	'relation-template-project': 	'CREATE TABLE IF NOT EXISTS replecon.relationTmplProject (id INT AUTO_INCREMENT PRIMARY KEY, projectID INT(4) NOT NULL,  tmplID INT(4) NOT NULL, type VARCHAR(20) NOT NULL, FOREIGN KEY (projectID) REFERENCES replecon.project(id), FOREIGN KEY (tmplID) REFERENCES replecon.template(id))ENGINE = InnoDB',
@@ -88,33 +94,36 @@ var queries = {
 			+ " replecon.object ("
 
 			+ " id INT AUTO_INCREMENT PRIMARY KEY, "
-			+ " DataTitle1 VARCHAR(100) , "
-			+ " DataTitle2 VARCHAR(200) , "
-			+ " DataTitle3 VARCHAR(300) , "
+			+ " DataTitle1 VARCHAR(100) , " // title
+			+ " DataTitle2 VARCHAR(200) , " 
+			// + " DataTitle3 VARCHAR(300) , "
 
-			+ " DataFlag1 BOOLEAN , "
-			+ " DataFlag2 BOOLEAN , "
-			+ " DataFlag3 BOOLEAN , "
+			+ " DataFlag1 BOOLEAN , " // exported
+			+ " DataFlag2 BOOLEAN , " // deleted
+			+ " DataFlag3 BOOLEAN , " 
 
-			+ " DataKey1 INT(5) ,  "
-			+ " DataKey2 INT(5) , "
+			+ " DataKey1 INT(5) ,  " //import log
+			+ " DataKey2 INT(5) , " // export log
 
-			+ " DataDate1 DATETIME , "
+			+ " DataDate1 DATETIME , " //
 			+ " DataDate2 DATETIME , "
 			+ " DataDate3 DATETIME , "
 			+ " DataDate4 DATETIME , "
 
-			+ " DataLink1 VARCHAR(300) , "
-			+ " DataLink2 VARCHAR(350) , "
-			+ " DataLink3 VARCHAR(400) , "
+			+ " DataLink1 VARCHAR(300) , " // video link
+			+ " DataLink2 VARCHAR(350) , " // thumbs
+			+ " DataLink3 VARCHAR(100) , " // baseThumb
+			+ " DataLink4 VARCHAR(100) , " // bigThumb
 
 			+ " DataContext VARCHAR(500) , "
 
-			+ " DataText1 VARCHAR(1000) , " 
-			+ " DataText2 VARCHAR(2000) , "
+			+ " DataText1 VARCHAR(1000) , " // description
+			+ " DataText2 VARCHAR(2000) , " 
+			+ " DataText3 VARCHAR(500) , " // duration
+			+ " DataText4 VARCHAR(500) , " 
 
-			+ " FootPrint1 INT(5) ,"
-			+ " FootPrint2 VARCHAR(100) "
+			+ " FootPrint1 INT(5) ," // originalID
+			+ " FootPrint2 VARCHAR(100) " // donor link
 
 			+ " )ENGINE = InnoDB"
 };
