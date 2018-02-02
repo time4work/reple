@@ -356,13 +356,91 @@ h1.page-title{
 }
 section#library .library-wrapper {
     position: relative;
-    overflow-x: scroll;
+    /*overflow-x: scroll;*/
     padding: 5px;   
+    margin-bottom: 50px;
 }
+section#library ul.library-value-list {
+    padding-left: 20px;
+}
+section#library li.library-value-list-item {
+    /*height: 30px;*/
+    position: relative;
+    max-width: 300px;
+    margin: 5px 0;
+    white-space: normal;
+}
+section#library li.library-value-list-item:hover {
+    outline: 2px auto #e6e6e6;
+    outline-offset: 0;
+    outline-style: auto;
+    list-style: outside;
+}
+section#library li.library-value-list-item span {
+    line-height: 2;
+    padding-left: 5px;
+    padding-right: 40px;
+    display: block;
+}
+section#library p.library-value-foot {
+    margin: 10px 0;
+}
+section#library div.library-value-list p.library-value-foot input {
+    width: calc(100% - 50px);
+    display: inline-block;
+}
+section#library div.library-value-list p.library-value-foot button{
+    float: right;
+}
+section#library li.library-value-list-item button {
+    display: none;
+}
+section#library li.library-value-list-item:hover button {
+    display: inline-block;
+}
+section#library li.library-value-list-item button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 28px;
+    padding: 0 11px 0 7px;
+    color: gray;
+    background: #aaaaaa26;
+    border-top-right-radius: 2px;
+    border-bottom-right-radius: 2px;
+}
+section#library li.library-value-list-item button:hover{
+    color: #df6c69;
+}
+ul#library-list {
+    padding: 15px 15px 30px;
+    white-space: nowrap;
+    box-shadow: inset 0 0 20px 8px #83838333;
+    overflow-x: scroll;
+}
+/*
+section#library::-webkit-scrollbar {
+    width: 1em;
+}
+ 
+section#library::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+}
+ 
+section#library::-webkit-scrollbar-thumb {
+  background-color: darkgrey;
+  outline: 1px solid slategrey;
+}*/
 section#library .library-titles {
     position: absolute;
     top: 0;
     left: 0;
+}
+section#library button.btn:focus{
+    outline: none;
+    /*outline: 2px auto -webkit-focus-ring-color;
+    outline-offset: 0;
+    outline-style: dashed;*/
 }
 section#library .library-key {
     padding-left: 24px;

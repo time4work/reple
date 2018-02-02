@@ -644,10 +644,126 @@ module.exports.createLibraryKey = async (name, callback) => {
 		return 0;
 	}
 }
+module.exports.deleteLibraryKey = async (keyID, callback) => {
+	try {
+		await new Promise(async(resolve, reject)=>{
+			
+			var query = 'SELECT valueID FROM libraryRelation '
+					+	'WHERE keyID = ? ';
+			let result = await myquery(query, [ keyID ]);
+			console.log('result');
+			console.log(result);
+			resolve(result);
+
+		}).then(async(values)=>{
+
+			for(var i=0; i<values.length; i++){
+				var query = 'DELETE FROM libraryValue '
+						+	'WHERE id = ? ';
+						console.log(values[i]);
+				let result2 = await myquery(query, [ values[i].valueID ]);
+				console.log('result2');
+				console.log(result2);
+			}
+			return;
+
+		}).then(async()=>{
+
+			var query = 'DELETE FROM libraryRelation '
+					+	'WHERE keyID = ? ';
+			let result3 = await myquery(query, [ keyID ]);
+			console.log('result3');
+			console.log(result3);
+			return;
+
+		}).then(async()=>{
+
+			var query = 'DELETE FROM libraryKey '
+					+	'WHERE id = ? ';
+			let result4 = await myquery(query, [ keyID ]);
+			console.log('result4');
+			console.log(result4);
+			
+		}).catch((e)=>{
+			console.log('my promis error');
+			console.log(e);
+		})
+
+		if(callback)
+			await callback();
+		return;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.deleteLibraryKeyValue = async (valueID, callback) => {
+	try {
+		await new Promise(async(resolve, reject)=>{
+
+			var query = 'DELETE FROM libraryRelation '
+					+	'WHERE valueID = ? ';
+			let result3 = await myquery(query, [ valueID ]);
+			console.log('result3');
+			console.log(result3);
+			resolve();
+
+		}).then(async()=>{
+
+			var query = 'DELETE FROM libraryValue '
+					+	'WHERE id = ? ';
+			let result2 = await myquery(query, [ valueID ]);
+			console.log('result2');
+			console.log(result2);
+			return;
+
+		}).catch((e)=>{
+			console.log('my promis error');
+			console.log(e);
+		})
+
+		if(callback)
+			await callback();
+		return;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.addLibraryKeyValue = async (value, callback) => {
+	try {
+		var query = "INSERT INTO libraryValue (`value`) VALUES (?)";
+		let result = await myquery(query, [ value ]);
+
+		if(callback)
+			await callback(result.insertId);
+		return result.insertId;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+module.exports.createRelationLibraryKeyValue = async (keyID, valueID, callback) => {
+	try {
+		var query = "INSERT INTO libraryRelation (`keyID`,`valueID`) VALUES (?,?)";
+		let result = await myquery(query, [ keyID, valueID ]);
+
+		if(callback)
+			await callback(result.insertId);
+		return result.insertId;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
 module.exports.selectLibraryItems = async (callback) => {
 	try {
 		var query = ""
-			+ " SELECT r.id, r.name as `key`, res2.value "
+			+ " SELECT r.id as `keyID`, r.name as `key`, res2.id as `valueID`, res2.value "
 			+ " FROM replecon.libraryKey r "
 			+ " left join "
 			+ " 	( "
@@ -663,7 +779,7 @@ module.exports.selectLibraryItems = async (callback) => {
 		// console.log(result);
 		let list = [...new Set(result.map(item => item.key))]
 		.map((key)=>{
-			return {key: key, value: []}
+			return {key: key, values: []}
 		});
 		// console.log(list);
 		result.forEach((item,i,arr)=>{
@@ -671,9 +787,9 @@ module.exports.selectLibraryItems = async (callback) => {
 
 			for(var j=0; j<list.length; j++){
 				if( list[j].key==_key ){
-					list[j].id = item.id;
+					list[j].id = item.keyID;
 					if(item.value!=null)
-						list[j].value.push( item.value);
+						list[j].values.push( {id:item.valueID,value:item.value});
 				}
 			}
 		});

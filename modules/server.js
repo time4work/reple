@@ -17,7 +17,7 @@ var JsonImportId = -1;
 /////////////////////////////////////////////
 module.exports = function(params){
 	var dir 		= params.rootdir;
-	var port 		= process.env.port || 5002;
+	var port 		= process.env.port || 5000;
 	var app 		= express();
 
 	app.set('port', (process.env.PORT || port) );
@@ -560,7 +560,8 @@ module.exports = function(params){
 
 
 	app.get('/library', async (request, response) => {
-		helpers.selectLibraryItems(async (result)=>{
+		await helpers.selectLibraryItems(async (result)=>{
+			console.log(result);
 			response.render('pages/library', {scope:{
 				library: result
 			}});
@@ -570,15 +571,40 @@ module.exports = function(params){
 	app.post('/library', async (request, response) => {
 		switch(request.body.type){
 			case "library.key.create":
-				let name = request.body.name;
-				if(name){
-					helpers.createLibraryKey(name, async (result)=>{
-						response.send({response:'ok'});
+				if(request.body.name){
+					let keyName = request.body.name;
+					await helpers.createLibraryKey(keyName, async (result)=>{
+						response.send({status:'ok'});
 					});
 				}else response.send({err:'new key name err'});
 				break;
-			// case "object.transfiguration":
-			// 	break;
+			case "library.key.delete":
+				if(request.body.id){
+					let keyID = request.body.id;
+					await helpers.deleteLibraryKey(keyID, async (result)=>{
+						response.send({status:'ok'});
+					});
+				}else response.send({err:'new key name err'});
+				break;
+			case "library.key.value.add":
+				if(request.body.id && request.body.value){
+					let keyID = request.body.id;
+					let keyValue = request.body.value;
+					await helpers.addLibraryKeyValue(keyValue, async(valueID)=>{
+						await helpers.createRelationLibraryKeyValue(keyID, valueID, async()=>{
+							response.send({status:'ok'});
+						});
+					});
+				}else response.send({err:'new key name err'});
+				break;
+			case "library.key.value.delete":
+				if(request.body.value_id){
+					let valueID = request.body.value_id;
+					await helpers.deleteLibraryKeyValue(valueID, async()=>{
+						response.send({status:'ok'});
+					});
+				}else response.send({err:'new key name err'});
+				break;
 			default:
 				console.log(" O O O P S . . . ");
 				response.send({err:'o o o p s'});

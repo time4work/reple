@@ -22,34 +22,57 @@
                     <p><span class="label-title">key</span></p>
                     <p><span class="label-title">value-list</span></p>
                 </div> -->
-                <ul>
+                <ul id='library-list'>
                     <% scope.library.forEach(function(item) { %>
-                    <li class='library-item' key-id='<%=item.id%>'>
-                        <div class="library-item-delete">
-                            <button class="btn btn-danger" select-id='<%=item.id%>' type="button">
+                    <li id='item-key-<%=item.id%>'
+                        class='library-item'
+                        key-id='<%=item.id%>'>
+                        <form onsubmit="addValueToKey(this,event)"
+                            key-id='<%=item.id%>'>
+                            <div class="library-item-delete">
+                                <button class="btn btn-danger" 
+                                    key-id='<%=item.id%>' 
+                                    type="button" 
+                                    onclick='deleteKey(this,event)'>
                                     <i class="fa fa-trash" aria-hidden="true"></i> 
-                            </button>
-                        </div>
-                        <div class="library-key">
-                            <p>
-                                <span>Key: </span><%= item.key %>
-                            </p>
-                        </div>
-                        <hr>
-                        <div class="labrary-value-list">
-                            <ul>
-                                <% item.value.forEach(function(val, iter) { %>
-                                    <li><%=val%></li>
-                                <% }); %>
-                            </ul>
-                            
-                            <p>
-                                <input type="text" placeholder="new value">
-                                <button class="btn btn-success add-more " select-id='' type="button">
-                                    <i class="glyphicon glyphicon-plus full-width"></i> 
                                 </button>
-                            </p>
-                        </div>
+                            </div>
+                            <div class="library-key">
+                                <p>
+                                    <span>Key: </span><%= item.key %>
+                                </p>
+                            </div>
+                            <hr>
+                            <div class="library-value-list">
+                                <ul class='library-value-list'>
+                                    <% item.values.forEach(function(val, iter) { %>
+                                        <li class='library-value-list-item'
+                                            id='item-value-<%=val.id%>'>
+                                            <span>
+                                                <%=val.value%>
+                                            </span>
+                                            <button class="btn" 
+                                                key-id='<%=item.id%>' 
+                                                value-id='<%=val.id%>'
+                                                type="button" 
+                                                onclick='deleteKeyValue(this,event)'>
+                                                <i class="fa fa-times" aria-hidden="true"></i> 
+                                            </button>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                                
+                                <p class='library-value-foot'>
+                                    <input type="text"
+                                        class='library-item-key form-control' 
+                                        placeholder="new value">
+                                    <button type='submit'
+                                        class="btn btn-success"> 
+                                        <i class="glyphicon glyphicon-plus full-width"></i> 
+                                    </button>
+                                </p>
+                            </div>
+                        </form>
                     </li>
                     <% }) %>
                 </ul>
@@ -60,21 +83,98 @@
     //////////////////////////////////////
     /////////////////////OnDomReadyBegin/
     function createKey(el,event){
-    if (event.preventDefault) event.preventDefault();
-    console.log(el);
-    console.log(event);
-    var name = prompt('new key name');
-    if(!name)return;
-    console.log("new key: "+name);
-    let data = {
-    type: "library.key.create",
-    name: name
-    };
-    ajax('/library/', data, (result)=>{
-    console.log(result);
-    });
+        if (event.preventDefault) event.preventDefault();
+        console.log(el);
+        console.log(event);
+
+        var name = prompt('new key name');
+        if(!name)return;
+        console.log("new key: "+name);
+
+        let data = {
+            type: "library.key.create",
+            name: name
+        };
+        ajax('/library/', data, (result)=>{
+            console.log(result);
+            if(result.status == 'ok')
+                location.reload();
+        });
+    }
+    function deleteKey(el,event){
+        if (event.preventDefault) event.preventDefault();
+        // console.log(event);
+
+        if(!confirm('are you shure?'))return;
+        let id = el.getAttribute('key-id');
+
+        let data = {
+            type: "library.key.delete",
+            id: id
+        };
+        console.log(data);
+        ajax('/library/', data, (result)=>{
+            console.log(result);
+            if(result.status == 'ok'){
+                let node = document.getElementById('item-key-'+id);
+                node.parentNode.removeChild(node);
+                // el.remove();
+            }
+        });
+    }
+    function addValueToKey(el){
+        if (event.preventDefault) event.preventDefault();
+        console.log(el);
+
+        let input = el.querySelector('input.library-item-key');
+        let id = el.getAttribute('key-id');
+
+        if(!input.value)return;
+        let data = {
+            type: "library.key.value.add",
+            id: id,
+            value: input.value,
+        };
+        ajax('/library/', data, (result)=>{
+            console.log(result);
+            if(result.status == 'ok'){
+                let list = el.querySelector('ul.library-value-list');
+                var _li = document.createElement('li');
+                // div.className = "alert alert-success";
+                _li.innerHTML = `
+                    <li class='library-value-list-item'>
+                        <span>
+                            `+input.value+`
+                        </span>
+                    </li>
+                `;
+                list.appendChild(_li);
+
+                input.value = '';
+            }
+        });
+    }
+    function deleteKeyValue(el){
+        if (event.preventDefault) event.preventDefault();
+        console.log(el);
+
+        let value_id = el.getAttribute('value-id');
+        if(!value_id)return;
+        let data = {
+            type: "library.key.value.delete",
+            value_id: value_id,
+        };
+        ajax('/library/', data, (result)=>{
+            console.log(result);
+            if(result.status == 'ok'){
+                let node = document.getElementById('item-value-'+value_id);
+                node.parentNode.removeChild(node);
+                // el.remove();
+            }
+        });
     }
     $(function(){
+
     });
     /////////////////////OnDomReadyEnd//
     ///////////////////////////////////

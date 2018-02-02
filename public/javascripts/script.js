@@ -168,7 +168,7 @@ function tagForm(e) {
     var name = x.value;
     var data = {name:name, syns:syns, type:'save'};
 
-   var body = 'name=' + encodeURIComponent(name)
+    var body = 'name=' + encodeURIComponent(name)
         // +"&syns=" + encodeURIComponent(syns)
         +"&syns=" + syns
         +'&type=save';
