@@ -38,20 +38,29 @@ function parseTmplObj(json){
 		obj[item['keyword']] = [];
 		return obj;
 	});
-	var tmpls = {};
+	var tmpl = {};
 	Array.prototype.forEach.call(tmpl_arr,function(elem) {
 	   var keys = Object.keys(elem);
-	   tmpls[keys[0]] = elem[keys[0]];
+	   tmpl[keys[0]] = elem[keys[0]];
 	});
 	for(var i=0; i<tmpl_pack.length; i++){
 		var key = tmpl_pack[i]['keyword'];
 		console.log(key);
 		var val = tmpl_pack[i]['val'];
 		console.log(val);
-		tmpls[key].push(val);
+		tmpl[key].push(val);
 	}
-	return tmpls;
+	return tmpl;
 }
+function parseLibObj(json){
+	var lib_arr= json.map((item)=>{
+		var obj = {};
+		obj[item['key']] = [];
+		return obj;
+	});
+	var lib = {};
+}
+
 $(function(){
 	var _console = $('section.p-console');
 	if(_console){
@@ -60,7 +69,7 @@ $(function(){
 			if(event.keyCode == 13){
 				var msg = $('section.p-console input').val();
 				$('section.p-console ul.output').append( "<hr>" );
-				var output = templateParse(msg,tmpls);
+				var output = templateParse(msg,tmpl);
 				$('section.p-console ul.output').append( "<li>"+output+"</li>" );
 				$('section.p-console ul.output').append( "<hr>" );
 			}

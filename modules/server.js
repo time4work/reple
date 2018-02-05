@@ -318,7 +318,9 @@ module.exports = function(params){
 			await helpers.selectTags( async (result2) => {
 				console.log(result2);
 				await helpers.selectTmplTemplates(template_id, async (result3)=>{
-					response.render('pages/template', {scope: {tmpl: result[0], tags: result2, templates: result3}});
+					await helpers.selectLibraryItems(async (result4)=>{
+						response.render('pages/template', {scope: {tmpl: result[0], tags: result2, templates: result3, library: result4}});
+					});
 				});
 			});
 			
@@ -420,11 +422,7 @@ module.exports = function(params){
 				console.log(result2);
 				await helpers.selectTagSyns(tag_id, async (result3) => {
 					console.log(result3);
-					// await helpers.selectFlagTemplates(tag_id, async (result4) => {
-						// console.log(result4);
-						response.render('pages/tag',{ scope : { tag:result[0], tags:result2, syns: result3} } );
-						// response.render('pages/tag',{ scope : { tag:result[0], tags:result2, syns: result3, templates:result4 } } );
-					// });
+					response.render('pages/tag',{ scope : { tag:result[0], tags:result2, syns: result3} } );
 				});
 			});
 		});
@@ -443,22 +441,6 @@ module.exports = function(params){
 					response.redirect('/tag/'+tag_id);
 				});
 				break;
-			// case "newTempl":
-			// 	console.log("newTemplate");
-			// 	let key = request.body.key.toLowerCase();
-			// 	let val = request.body.val;
-			// 	await helpers.createTagTemplate(tag_id, key, val, (result) => {
-			// 		response.send(result);
-			// 	});
-			// 	break;
-			// case "delTmpl":
-			// 	let tmpl_id = request.body.id;
-			// 	if(!tmpl_id)
-			// 		response.send({err:'oops'});
-			// 	await helpers.deleteTagTemplate(tag_id, tmpl_id, (result) => {
-			// 		response.send(result);
-			// 	});
-			// 	break;
 			case "tag.del":
 				await helpers.deleteTag(tag_id, (result) => {
 					response.send({redirect:'/tags/'});

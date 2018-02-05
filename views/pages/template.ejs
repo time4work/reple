@@ -15,6 +15,35 @@
 			</ul>
 		</section>
 
+		<section class='key-library-window'>
+			<div class="side-btn"></div>
+			<div class="key-library-window-body">
+				<h4>Key Library</h4>
+				<hr>
+				<section class="description-box">
+					<h4>Library Usage:</h4>
+					<p>The usage is the same as with simple &#60;key&#62;</p>
+					<p>But instead of using &#60;&#62; arrow symbol</p>
+					<p>Library key uses the [ ] square brackets</p>
+					<p>The library keys are global </p>
+					<p>So they can be used in any text-template</p>
+				</section>
+				<hr>
+
+				<% scope.library.forEach(function(lib_item, lib_iter){ %>
+					<div class="key-library-window-box">
+						<h5>[ <%=lib_item.key%> ]</h5>
+						<ul>
+							<% lib_item.values.forEach(function(lib_value, lib_iter){ %>
+								<li><%=lib_value.value%></li>
+							<% }) %>
+						</ul>
+					</div>
+				<% }) %>
+
+			</div>
+		</section>
+
 		<section id="template-details" class="col-md-12" tmpl-id='<%=scope.tmpl.id%>'>
 			<div class="details-body">
 
@@ -34,7 +63,6 @@
 							<span class="label-title">id</span>
 							<input type="text"  id='id-input' value="<%= scope.tmpl.id %>" readonly>
 						</p>
-						<!-- <p><button type='submit' class='btn'>save</button></p> -->
 
 						<div class="main-butt-forth">
 							<input class="btn btn-danger" type="button" value="DELETE" onclick='removeCurTmpl(this,event)' >
@@ -113,21 +141,12 @@
 									</p>
 								</div>
 								<hr>
-								<!-- <p class='radio-line'>
-									<span>
-										<input type="radio" name="assoc" value="negative"> 
-										<span>negative</span> 
-									</span>	
-									<span>
-										<input type="radio" name="assoc" value="positive"> 
-										<span>positive</span>
-									</span>							
-								</p> -->
 								<p>
 									<button class="btn btn-success add-tmpl full-width" select-id='template-text' type="button"><i class="glyphicon glyphicon-plus full-width"></i></button>
 								</p>
 
-							</div> <!-- tag-condition -->
+							</div> 
+<!-- tag-condition -->
 
 						</p>
 					</div>	
@@ -169,7 +188,8 @@
 	<script>
 		var url = '/template/'+'<%=scope.tmpl.id%>';
 		var tmpl_pack = <%-JSON.stringify(scope.templates)%>;
-		var tmpls = parseTmplObj(tmpl_pack);
+		var lib_pack = <%-JSON.stringify(scope.library)%>;
+		var tmpl = parseTmplObj(tmpl_pack);
 		function removeCurTmpl(el, event){
 			console.log(el);
 			console.log(event);
@@ -207,6 +227,10 @@
 			});
 			$(".bootstrap-tagsinput input").attr("readonly", true);
 
+			$('section.key-library-window div.side-btn').on('click', (e)=>{
+				$('section.key-library-window').toggleClass('show');
+			});
+
 			$('div.tags button.add-more.assocs-tag').on('click', (e)=>{
 				var btn = e.target;
 				var select = document.getElementById("syn-tag-select");
@@ -233,39 +257,33 @@
 
 				$('#stop-tag').tagsinput('add', {"id":tag_id, "label":tag_name} );
 			});
-		});
-		$('div.templates_mng button.add-tmpl').on('click', (e)=>{
-			console.log('click');
-			var btn = e.target;
-			var key = $('input#tmpl-key').val(),
-				val = $('input#tmpl-val').val();
-			if( !key )
-				return
+			$('div.templates_mng button.add-tmpl').on('click', (e)=>{
+				console.log('click');
+				var btn = e.target;
+				var key = $('input#tmpl-key').val(),
+					val = $('input#tmpl-val').val();
+				if( !key )
+					return
 
-			var syn_arr = $('#assocs-tag').val();
-			var stop_arr = $('#stop-tag').val();
+				var syn_arr = $('#assocs-tag').val();
+				var stop_arr = $('#stop-tag').val();
 
-			var data = {type:'newTTmpl', key:key, val:val
-					// , syntags:syn_arr, stoptags:stop_arr
+				var data = {
+					type:'newTTmpl', 
+					key:key, 
+					val:val,
+					// syntags:syn_arr, stoptags:stop_arr
 				};
 
-			// var data = {type:'newTTmpl', key:key, val:val};
-			// if(syn_arr)
-				data['assoctags'] = JSON.stringify(syn_arr);
-			// if(stop_arr)
-				data['stoptags'] = JSON.stringify(stop_arr);
+					data['assoctags'] = JSON.stringify(syn_arr);
+					data['stoptags'] = JSON.stringify(stop_arr);
 
-			// data = "type=" 	+ JSON.stringify('newTTmpl')
-			// 	+ "&key=" 	+ JSON.stringify(key)
-			// 	+ "&val=" 	+ JSON.stringify(val)
-			// 	+ "&syntags="  + JSON.stringify(syn_arr)
-			// 	+ "&stoptags=" + JSON.stringify(stop_arr);
-
-			console.log(data);
-			ajax(url, data, (resp)=>{
-				console.log(resp);
+				console.log(data);
+				ajax(url, data, (resp)=>{
+					console.log(resp);
+				});
+				// location.reload();
 			});
-			// location.reload();
 		});
 	</script>
 	</body>

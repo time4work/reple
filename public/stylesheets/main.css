@@ -354,6 +354,55 @@ h1.page-title{
     padding: 5px;
     margin: 10px 0px;
 }
+/*_________________________*/
+section.key-library-window {
+    position: fixed;
+    top: 40px;
+    right: -400px;
+    outline: 1px solid #d6d6d6;
+    height: calc(100vh - 77px);
+    width: 400px;
+    z-index: 2;
+    background: white;
+}
+section.key-library-window.show{
+    right: 0;    
+}
+section.key-library-window .side-btn {
+    position: absolute;
+    height: 100%;
+    outline: 1px solid #d6d6d6;
+    top: 0;
+    left: -21px;
+    width: 20px;
+    background: #f2f2f2;
+    box-shadow: -1px 0px 1px 0px black;
+    cursor: pointer;
+}
+section.key-library-window .key-library-window-body{
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    overflow-y: auto;
+    padding: 20px;
+}
+/*section.key-library-window hr{
+    border-color: black;
+}*/
+section.key-library-window .key-library-window-body h5{
+    margin: 0;
+    margin-bottom: 10px;
+    box-shadow: -19px -6px 20px 2px #d2d2d2;
+    padding: 5px;
+    letter-spacing: 2px;
+}
+section.key-library-window .key-library-window-box {
+    padding: 5px;
+    overflow: hidden;
+    border-left: 1px solid #c1c1c1;
+    margin: 5px 0;
+}
+/*_________________________*/
 section#library .library-wrapper {
     position: relative;
     /*overflow-x: scroll;*/
