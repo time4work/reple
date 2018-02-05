@@ -190,6 +190,7 @@
 		var tmpl_pack = <%-JSON.stringify(scope.templates)%>;
 		var lib_pack = <%-JSON.stringify(scope.library)%>;
 		var tmpl = parseTmplObj(tmpl_pack);
+		var lib = parseLibObj(lib_pack);
 		function removeCurTmpl(el, event){
 			console.log(el);
 			console.log(event);

@@ -76,7 +76,7 @@ var queries = {
 	'template-condition': 	"CREATE TABLE IF NOT EXISTS replecon.templateCondition(id INT AUTO_INCREMENT PRIMARY KEY, tagID int(4) NOT NULL,tmplKeyID int(4) NOT NULL,positive BOOLEAN NOT NULL,FOREIGN KEY (tagID) REFERENCES replecon.tag(id),FOREIGN KEY (tmplKeyID) REFERENCES replecon.templateKey(id))ENGINE = InnoDB",
 	// 'tag-template': 'CREATE TABLE IF NOT EXISTS replecon.tagTemplates (id INT AUTO_INCREMENT PRIMARY KEY, keyword VARCHAR(255), val VARCHAR(600), flag INT(4) )ENGINE = InnoDB',
 
-	'library-key': "CREATE TABLE IF NOT EXISTS replecon.libraryKey(id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(25) NOT NULL)ENGINE = InnoDB",
+	'library-key': "CREATE TABLE IF NOT EXISTS replecon.libraryKey(id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(25) NOT NULL, UNIQUE(name))ENGINE = InnoDB",
 	'library-value': "CREATE TABLE IF NOT EXISTS replecon.libraryValue(id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(255) NOT NULL)ENGINE = InnoDB",
 	'relation-library-key-value': "CREATE TABLE IF NOT EXISTS replecon.libraryRelation(id INT AUTO_INCREMENT PRIMARY KEY, keyID int(4) NOT NULL, valueID int(4) NOT NULL, FOREIGN KEY (keyID) REFERENCES replecon.libraryKey(id),FOREIGN KEY (valueID) REFERENCES replecon.libraryValue(id))ENGINE = InnoDB",
 	// 'relation-library-template': "CREATE TABLE IF NOT EXISTS replecon.relationLibraryTmpl(id INT AUTO_INCREMENT PRIMARY KEY,  )ENGINE = InnoDB",
