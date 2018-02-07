@@ -354,6 +354,53 @@ h1.page-title{
     padding: 5px;
     margin: 10px 0px;
 }
+.controllers{}
+.controllers i{
+    font-size: 20px;
+    padding: 0 20px;
+}
+.controlers span{
+    font-size: 20px;
+    margin: 0 20px;
+}
+.controller-row {
+    position: relative;
+    display: block;
+    padding-right: 300px;
+    margin: 0;
+}
+.c-status-bar {
+    position: absolute;
+    height: 100%;
+    top: 0;
+    right: 0;
+}
+.c-status-bar {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+.c-status-bar span {
+    width: 100px;
+    margin: 0 10px;
+    display: inline-block;
+}
+.controller-row .c-status-bar span.c-loader {
+    border: 4px solid #f3f3f3; /* Light grey */
+    border-top: 4px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+}
+
+.controller-row.active .c-status-bar span.c-loader {
+    animation: spin 2s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 /*_________________________*/
 section.key-library-window {
     position: fixed;

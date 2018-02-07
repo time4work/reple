@@ -8,25 +8,43 @@
   <% include ../partials/leftnav.ejs %>
   
   <div class="container">
-  	<h1>Object List Page</h1>
-    <h3>Data length: <%=scope.size%></h3>
-    <h3>Ready Objects: <%=scope.size2%></h3>
-  	<hr>
-    <ul class='object-menu'>
-      <li>
+    <div class="row">
+      <div class='col-xs-4'>
+        <h1>Object List Page</h1>
+        <h3>Data length: <%=scope.size%></h3>
+        <h3>Ready Objects: <%=scope.size2%></h3>
+      </div>
+      <div class="col-xs-8 controllers">
+        <hr>
+        <div class='controller-row thumb-maker'>
           <i class="fa fa-camera-retro" aria-hidden="true"></i>
-          <span>Make Thumbs</span>
-          <button onclick='makeThumbs(event)'>start</button>
-          <button onclick='stopMakeThumbs(event)'>stop</button>
-      </li>
-      <li>
+          <span>Make thumbs</span>
+          <div>
+            <button class='btn btn-secondary' onclick='makeThumbs(event)'>start</button>
+            <button class='btn btn-secondary' onclick='stopMakeThumbs(event)'>stop</button>
+          </div>
+          <div class="c-status-bar">
+            <span class="c-iterator">0 / 1200</span>
+            <span class="c-timer">00:00:00</span>
+            <span class="c-loader"></span>
+          </div>
+        </div>
+        <hr>
+        <div class='controller-row'>
           <i class="fa fa-eye" aria-hidden="true"></i>
-        <a href="#">
-          <span>check links</span>
-        </a>
-      </li>
-    </ul>
-    <hr>
+          <span>Check object-links</span>
+          <div>
+            <button class='btn btn-secondary' onclick=''>start</button>
+            <button class='btn btn-secondary' onclick=''>stop</button>
+          </div>
+          <div class="c-status-bar">
+            <span class="c-iterator">0 / 1200</span>
+            <span class="c-timer">00:00:00</span>
+            <span class="c-loader"></span>
+        </div>
+        <hr>
+      </div>
+    </div>
 	<!-- <div class="psearch">
 		<input type="text" id="search" placeholder="SEARCH BY NAME" >
 		<img class="find noselect" src="/img/s-icon.svg">
@@ -67,11 +85,12 @@
   const projectID = <%=scope.project.id%>;
   function stopMakeThumbs(event){
     if (event.preventDefault) event.preventDefault();
-    console.log('click');
+    console.log('stopMakeThumbs click');
     data = {};
-    data.type = 'process.thumbs.make.terminate';
+    data.type = 'process.thumbs.terminate';
     if( confirm("are you sure?") ){
       // blockTheKraken();
+      $('.controller-row.thumb-maker').removeClass('active'); 
       ajax('/project/'+projectID+'/objects/', data, (result)=>{
         console.log(result);
         // releaseTheKraken();
@@ -81,28 +100,35 @@
   }
   function makeThumbs(event){
     if (event.preventDefault) event.preventDefault();
-    console.log('click');
+    console.log('makeThumbs click');
     data = {};
     data.type = 'objects.thumbs.make';
 
     if( confirm("are you sure?") ){
       // blockTheKraken();
+      $('.controller-row.thumb-maker').addClass('active'); 
       ajax('/project/'+projectID+'/objects/', data, (result)=>{
         console.log(result);
         // releaseTheKraken();
-        alert('finish');
+        // alert('finish');
       });
     }
   }
+  function checkStatus(){
+    console.log('checkMakeThumbs click');
+    data = {};
+    data.type = 'objects.thumbs.check';
 
+      ajax('/project/'+projectID+'/objects/', data, (result)=>{
+        console.log(result);
+      });
+  }
   $(function(){
     console.log('start');
-    // var eventSource = new EventSource("/project/1/objects/");
 
-    // eventSource.onmessage = function(e) {
-    //   console.log("Пришло сообщение: " + e.data);
-    //   console.log(e);
-    // };
+    var timerId = setInterval(function() { 
+      checkStatus();
+    }, 3000);
   });
 </script>
 </html>

@@ -5,27 +5,79 @@ const scraperModule     = require('./scraper');
 const ffmpegModule  = require('./ffmpeg');
 const ASYNSQL   = require('./mysql').asynccon;
 const Xvfb    = require('xvfb');
-
+let thumbManager = class{
+    constructor(dir){
+        this.dir = dir;
+        // this.idArr = [];
+        this.processArr = {};
+        this.timer = new Date(); 
+    }
+    async createProcess(projectID, objects){
+        if( this.processArr.hasOwnProperty(projectID) )
+            return 'TM alredy busy with process['+projectID+']'
+        let process = await new thumbMaker(this.dir);
+        this.processArr[projectID] = {
+            id: projectID,
+            tm: process,
+        };
+        this.processArr[projectID].tm.make(objects);
+        return 'TM process was created';
+    }
+    test(projectID){
+        return this.processArr;
+    }
+    async getStatus(projectID){
+        if( !this.processArr.hasOwnProperty(projectID) )
+            return 'no process['+projectID+'] in TM'
+        let status = await this.processArr[projectID].tm.getStatus()
+        let step = await this.processArr[projectID].tm.getIterator()
+        if(!status) await this.stopProcess(projectID);
+        return {
+            status: status,
+            step: step,
+            time: this.timer,
+        }
+    }
+    async stopProcess(projectID){
+        if( !this.processArr.hasOwnProperty(projectID) )
+            return 'no process['+projectID+'] in TM'
+        await this.processArr[projectID].tm.kill();
+        // remove process
+        delete this.processArr[projectID];
+        return 'the process['+projectID+'] was terminated'
+    }
+}
+///////////////////////////////////////////
 let thumbMaker = class {
     constructor(dir){
         this.dir = dir;
-        this.process = true;
+        this.process = false;
         this.xvfb = new Xvfb();
+        this.iterator = 0;
     }
     kill(){
         this.process = false;
     }
+    getStatus(){
+        return this.process;
+    }
+    getIterator(){
+        return this.iterator;
+    }
     // main
     async make(objects){
+        if(this.process)
+            return;
         this.process = true;
         this.xvfb.startSync();
         console.log('._._._.');
         for(var i=0; i<=objects.length; i++){
+            this.iterator = i;
 			//  simpleThumbsNames
 			// 	baseThumbName
 			// 	bigThumbName
 			// 	duration
-            var namePrefix = makeid(7);
+            var namePrefix = makeid(8);
 
             console.log('catch obj ['+i+']');
 
@@ -107,6 +159,7 @@ let thumbMaker = class {
             	.catch(err => console.error(err));
         }
         this.xvfb.stopSync();
+        this.process = false;
     }
     // save duration
     async saveDuration(objectID){
@@ -220,4 +273,6 @@ function makeid(length) {
 
     return text;
 }
-module.exports = thumbMaker;
+module.exports = thumbManager;
+
+// module.exports.thumbManager = thumbManager;

@@ -8,16 +8,16 @@ const expressLogging= require('express-logging');
 const logger 		= require('logops');
 const bodyParser 	= require('body-parser');
 const helpers 		= require('./helpers');
-const myThumbMaker 	= require('./thumb-maker');
+const thumbManager 	= require('./thumb-maker');
 /////////////////////////////////////////////
-const thumbMaker 	= new myThumbMaker('./screens/');
+const TM = new thumbManager('./screens/');
 /////////////////////////////////////////////
 var JsonImportProgress = false;
 var JsonImportId = -1;
 /////////////////////////////////////////////
 module.exports = function(params){
 	var dir 		= params.rootdir;
-	var port 		= process.env.port || 5000;
+	var port 		= process.env.port || 5001;
 	var app 		= express();
 
 	app.set('port', (process.env.PORT || port) );
@@ -163,21 +163,30 @@ module.exports = function(params){
 	});
 	app.post('/project/:id/objects', async (request, response)=>{ 
 		let project_id = request.params.id;
-
+		let result;
 		switch(request.body.type){
 			case 'objects.thumbs.make':
-				response.send({status: "ok"});
+				// response.send({status: "ok"});
 				await helpers.selectProjectObjects(project_id, async (objects) => {
-					// console.log(objects);
-					await thumbMaker.make(objects);
-					// await helpers.makeObjectThumbs(result, async () => {
-					// 	response.send({status: "ok"});
-					// });
+					result = await TM.createProcess(project_id, objects)
+					response.send({status: result});
 				});
 				break;
-			case 'process.thumbs.make.terminate':
-				thumbMaker.kill();
-				response.send({status: "ok"});
+			case 'process.thumbs.terminate':
+				result = await TM.stopProcess();
+				response.send({status: result});
+				break;
+			case 'objects.thumbs.check':
+				result = await TM.getStatus(project_id);
+				console.log(result);
+				if(!result.status) 
+					response.send(result);
+				else
+					response.send({
+						status: result.status,
+						step: result.step,
+						time: result.time,
+					});
 				break;
 			default:
 				response.send({err: "opps, wrong type"});

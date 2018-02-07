@@ -21,11 +21,15 @@ module.exports.getLink = async function(url) {
             'ignore-certificate-errors': true,
             'node-integration': false,
             'web-security': false,
-            // show: true,
+            show: true,
             // width: 1280,
             // height: 700,
             // waitTimeout: 6000
-        }).on( 'did-get-redirect-request', function(event, oldUrl, newUrl){
+        })
+        // .then(()=>{
+        //     console.log('scraper start');
+        // })
+        .on( 'did-get-redirect-request', function(event, oldUrl, newUrl){
             console.log('did-get-redirect-request');
             console.log(event);
             console.log(oldUrl);
@@ -51,6 +55,7 @@ module.exports.getLink = async function(url) {
         .viewport(1000, 1000)
         .wait(2000)
         .evaluate(function(url) {
+            console.log('lets get the link');
             var obj,link;
 
             if (url.search(/pornhub\.com/i) != -1){
