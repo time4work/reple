@@ -17,7 +17,7 @@ var JsonImportId = -1;
 /////////////////////////////////////////////
 module.exports = function(params){
 	var dir 		= params.rootdir;
-	var port 		= process.env.port || 5001;
+	var port 		= process.env.port || 5000;
 	var app 		= express();
 
 	app.set('port', (process.env.PORT || port) );
