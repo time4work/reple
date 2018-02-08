@@ -41,6 +41,17 @@ module.exports.childcon = function(params){
 		database : params.database 	|| 'wpchild'
 	});
 };
+module.exports.chilpool = async function(params){
+	const  mysql = require('mysql2/promise');
+	return  await mysql.createPool({
+		host     : params.host 		|| 'localhost',
+		user     : params.user 		|| 'test',
+		password : params.password 	|| 'test',
+		database : params.database 	|| 'wpchild',
+	    connectionLimit : 500000, //important
+	    debug    : false
+	});
+};
 /////////////////////////////////////////////
 module.exports.sshcon = function(params){
 	const mysql = require('mysql-ssh');

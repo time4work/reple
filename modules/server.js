@@ -154,7 +154,7 @@ module.exports = function(params){
 		await helpers.selectProject(project_id, async (result) => {
 			await helpers.selectProjectSize(project_id, async (result2) => {
 				await helpers.selectProjectObjects(project_id, async (result3) => {
-					await helpers.selectProjectReadyObjects(result3, async (result4)=>{
+					await helpers.selectProjectReadyObjectLength(result3, async (result4)=>{
 						response.render('pages/objects', {scope: {project: result, size:result2,size2: result4, objects:result3} });
 					});
 				});
@@ -167,20 +167,21 @@ module.exports = function(params){
 		switch(request.body.type){
 			case 'objects.thumbs.make':
 				// response.send({status: "ok"});
+				let time = request.body.time;
 				await helpers.selectProjectObjects(project_id, async (objects) => {
-					result = await TM.createProcess(project_id, objects)
+					result = await TM.createProcess(project_id, objects);
 					response.send({status: result});
 				});
 				break;
 			case 'process.thumbs.terminate':
-				result = await TM.stopProcess();
+				result = await TM.stopProcess(project_id);
 				response.send({status: result});
 				break;
 			case 'objects.thumbs.check':
 				result = await TM.getStatus(project_id);
 				console.log(result);
 				if(!result.status) 
-					response.send(result);
+					response.send({msg:'no process'});
 				else
 					response.send({
 						status: result.status,
@@ -194,21 +195,27 @@ module.exports = function(params){
 	});
 	app.get('/project/:id/export', async (request, response)=>{ 
 		let project_id = request.params.id;
-		await helpers.selectProject(project_id, async (result) => {
-			await helpers.selectProjectDB(project_id, async (result2) => {
-				await helpers.selectProjectLogs(project_id, async (result3) => {
-					await helpers.selectProjectUnmappedObjects(project_id, async(result4)=>{
-						await helpers.selectExportLogs(project_id, async(result5)=>{
-							response.render('pages/export',{scope: {
-								project: result, 
-								db: result2, 
-								logs: result3, 
-								objs: result4,
-								exportlogs: result5
-							}});
+		await helpers.selectProject(project_id, async (project) => {
+			await helpers.selectProjectDB(project_id, async (db) => {
+				await helpers.selectProjectLogs(project_id, async (logs) => {
+
+					await helpers.selectProjectUnmappedObjects(project_id, async(um_objects)=>{
+						await helpers.selectProjectReadyObjects(um_objects, async (objects)=>{
+							
+							await helpers.selectExportLogs(project_id, async(exportlogs)=>{
+								response.render('pages/export',{scope: {
+									project: project, 
+									db: db, 
+									logs: logs, 
+									objs: objects,
+									exportlogs: exportlogs
+								}});
+							});
+
+							// response.render('pages/objects', {scope: {project: project, size:result2,size2: result4, objects:result3} });
 						});
-						
 					});
+
 				});
 			});	
 		});	
@@ -223,14 +230,22 @@ module.exports = function(params){
 				await helpers.selectProjectDBlocalhost(projectDB.dbhID, async(db_params)=>{
 					console.log(db_params);
 					
-					await helpers.exportObjects(project_id, db_params, async (result)=>{
-						console.log(result);
-						// response.send("ok");
-						// response.redirect('/project/'+project_id+'/export');
-						response.send({err:"oops"});
+					await helpers.selectProjectUnmappedObjects(project_id, async(um_objects)=>{
+						await helpers.selectProjectReadyObjects(um_objects, async (objects)=>{	
+							await helpers.exportObjects(project_id, db_params, objects, async (result)=>{
+								console.log(result);
+								// response.send("ok");
+								// response.redirect('/project/'+project_id+'/export');
+								response.send({err:"oops"});
+							});
+						});
 					});
+					
 				});
-			}else{}
+			}else{
+				// foreign db host
+				response.send({err:"oops"});
+			}
 		});
 	});
 

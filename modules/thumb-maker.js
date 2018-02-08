@@ -10,9 +10,12 @@ let thumbManager = class{
         this.dir = dir;
         // this.idArr = [];
         this.processArr = {};
-        this.timer = new Date(); 
+        this.timer = new Date().toString(); 
+        console.log(this.timer);
     }
-    async createProcess(projectID, objects){
+    async createProcess(projectID, objects, time){
+        if(time)
+            this.time = time;
         if( this.processArr.hasOwnProperty(projectID) )
             return 'TM alredy busy with process['+projectID+']'
         let process = await new thumbMaker(this.dir);

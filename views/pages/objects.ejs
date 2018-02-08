@@ -24,7 +24,7 @@
             <button class='btn btn-secondary' onclick='stopMakeThumbs(event)'>stop</button>
           </div>
           <div class="c-status-bar">
-            <span class="c-iterator">0 / 1200</span>
+            <span class="c-iterator">0 / <%=scope.size%></span>
             <span class="c-timer">00:00:00</span>
             <span class="c-loader"></span>
           </div>
@@ -90,7 +90,7 @@
     data.type = 'process.thumbs.terminate';
     if( confirm("are you sure?") ){
       // blockTheKraken();
-      $('.controller-row.thumb-maker').removeClass('active'); 
+      // $('.controller-row.thumb-maker').removeClass('active'); 
       ajax('/project/'+projectID+'/objects/', data, (result)=>{
         console.log(result);
         // releaseTheKraken();
@@ -103,7 +103,7 @@
     console.log('makeThumbs click');
     data = {};
     data.type = 'objects.thumbs.make';
-
+    data.time = new Date();
     if( confirm("are you sure?") ){
       // blockTheKraken();
       $('.controller-row.thumb-maker').addClass('active'); 
@@ -115,12 +115,29 @@
     }
   }
   function checkStatus(){
-    console.log('checkMakeThumbs click');
+    // console.log('checkMakeThumbs click');
     data = {};
     data.type = 'objects.thumbs.check';
 
       ajax('/project/'+projectID+'/objects/', data, (result)=>{
-        console.log(result);
+        // console.log(result);
+        if(!result.status){
+          $('.controller-row.thumb-maker').removeClass('active');
+        }
+        else{
+          // console.log(result.time);
+          // console.log(new Date());
+          var mseconds = new Date().getTime() - Date.parse(result.time);
+          // console.log(mseconds);
+          var date = new Date(null);
+          date.setMilliseconds(mseconds - 60000);
+          var time = date.toISOString().substr(11, 8);
+          var step = result.step;
+          $('.controller-row.thumb-maker').addClass('active');
+          $('.controller-row.thumb-maker span.c-timer').text(time);
+          $('.controller-row.thumb-maker span.c-iterator').text(step+" / "+<%=scope.size%>);
+
+        }
       });
   }
   $(function(){
@@ -128,7 +145,7 @@
 
     var timerId = setInterval(function() { 
       checkStatus();
-    }, 3000);
+    }, 1000);
   });
 </script>
 </html>

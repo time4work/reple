@@ -6,8 +6,9 @@ const PythonShell = require('python-shell');
 const MYSQL 	= require('./mysql').connection;
 const MYSQL_SSH	= require('./mysql').sshcon;
 const ASYNSQL 	= require('./mysql').asynccon;
-const CHILDCON 	= require('./mysql').childcon;
 const POOLCON 	= require('./mysql').pool;
+const CHILDCON 	= require('./mysql').childcon;
+const CHILDPOOL = require('./mysql').chilpool;
 const scraperModule 	= require('./scraper');
 const ffmpegModule 	= require('./ffmpeg');
 
@@ -805,11 +806,21 @@ module.exports.selectLibraryItems = async (callback) => {
 		return 0;
 	}
 }
-module.exports.selectProjectReadyObjects = async (objects, callback) => {
+module.exports.selectProjectReadyObjectLength = async (objects, callback) => {
 	var x = 0;
 	for(var i=0; i<objects.length; i++){
 		if( objects[i].DataLink2 && objects[i].DataLink3 && objects[i].DataLink4 && objects[i].DataText3 ) 
 			x++;
+	}
+	if(callback)
+		await callback(x);
+	return x;
+}
+module.exports.selectProjectReadyObjects = async (objects, callback) => {
+	var x = [];
+	for(var i=0; i<objects.length; i++){
+		if( objects[i].DataLink2 && objects[i].DataLink3 && objects[i].DataLink4 && objects[i].DataText3 ) 
+			x.push( objects[i] );
 	}
 	if(callback)
 		await callback(x);
@@ -942,9 +953,30 @@ module.exports.selectProjectLogs = async (projectID, callback) => {
 	}
 }
 /////////////////////////////////////////////
-module.exports.exportObjects = async (projectID, db_params, callback) => {
+async function postmetaInsert(connection, postID, key, value, callback){
 	try {
-		const connection = await CHILDCON(db_params); // !
+		var query = ""
+				+	" INSERT INTO wp_postmeta("
+				+	" post_id, "
+				+	" meta_key, "
+				+	" meta_value "
+				+	" ) VALUES (?,?,?); "
+
+		let result = await connection.query(query, [ postID, key, value ]);
+
+		if(callback)
+			await callback(result[0]);
+		return result[0];
+
+	} catch (e) {
+		console.log(e);
+		return 0;
+	}
+}
+/////////////////////////////////////////////
+module.exports.exportObjects = async (projectID, db_params, objects, callback) => {
+	try {
+		const connection = await CHILDPOOL(db_params); // !
 
 		var query = ""
 				+	" INSERT INTO wp_posts("
@@ -994,34 +1026,58 @@ module.exports.exportObjects = async (projectID, db_params, callback) => {
 				+	" WHERE id=? ";
 
 
-		console.log(" < objs > ");
-		var objs = await selectProjectUnmappedObjects(projectID);
-		console.log(objs);
+		// console.log(" < objs > ");
+		// var objs = await selectProjectUnmappedObjects(projectID);
+		// console.log(objs);
 
-		if(objs.length == 0) return;
-
-
+		// if(objs.length == 0) return;
 
 
-		for(var i=0; i<objs.length; i++){
-			let objResult = await connection.execute( query, 
-			[
-				(5*i+i),
-				(5*i+i),
-				(5*i+i),
-				(5*i+i),
-				objs[i].DataText1,
-				objs[i].DataTitle1,
-				objs[i].DataTitle1
-					.toLowerCase()
-					.replace(punctREGEX, '')
-					.replace(/(^\s*)|(\s*)$/g, '')
-					.replace(/\s+/g,'-'),
-				"no link"
-			] ); // !
+			console.log(" < logID > ");
+			var logID = await createExportLog(projectID);
+			console.log( logID );
+
+		for(var i=0; i<objects.length; i++){
+			let objResult = await connection.query( query, 
+				[
+					(5*i+i),
+					(5*i+i),
+					(5*i+i),
+					(5*i+i),
+					objects[i].DataText1,
+					objects[i].DataTitle1,
+					objects[i].DataTitle1
+						.toLowerCase()
+						.replace(punctREGEX, '')
+						.replace(/(^\s*)|(\s*)$/g, '')
+						.replace(/\s+/g,'-'),
+					"no link"
+				] ); // !
 			console.log(" < objResult > ");
 			console.log(objResult[0]);
-			
+			// objResult[0].insertId
+
+			console.log(" < postmetaInsert > ");
+			console.log(objResult[0]);
+			let duration = objects[i].DataText3,
+				thumbs = objects[i].DataLink2,
+				base_thumb = objects[i].DataLink3,
+				big_thumb = objects[i].DataLink4,
+				donor_id = 111,
+				link = objects[i].DataLink1,
+				focuskw = objects[i].DataTitle1.toLowerCase(),
+				title = objects[i].DataTitle1.replace(/\b\w/g, l => l.toUpperCase()),
+				metadesc = objects[i].DataTitle1.replace(/\b\w/g, l => l.toUpperCase());
+			await postmetaInsert(connection, objResult[0].insertId, 'duration', duration);
+			await postmetaInsert(connection, objResult[0].insertId, "thumbs", thumbs);
+			await postmetaInsert(connection, objResult[0].insertId, "base_thumb", base_thumb);
+			await postmetaInsert(connection, objResult[0].insertId, "big_thumb", big_thumb);
+			await postmetaInsert(connection, objResult[0].insertId, "donor_id", donor_id);
+			await postmetaInsert(connection, objResult[0].insertId, "link", link);
+			await postmetaInsert(connection, objResult[0].insertId, "_yoast_wpseo_focuskw", focuskw);
+			await postmetaInsert(connection, objResult[0].insertId, "_yoast_wpseo_title", title);
+			await postmetaInsert(connection, objResult[0].insertId, "_yoast_wpseo_metadesc", metadesc);
+
 			let tag_query = "select term_id from wp_terms where name = ?";
 			
 			let new_tag_query = "insert into wp_terms"
@@ -1032,24 +1088,24 @@ module.exports.exportObjects = async (projectID, db_params, callback) => {
 			+ " (object_id, term_taxonomy_id, term_order) "
 			+ " VALUES (?, ?, 0) "
 			
-			let tags = await selectObjectTags(objs[i].id);
+			let tags = await selectObjectTags(objects[i].id);
 			for(var j=0; j<tags.length; j++){
 				
-				let foreignTagId = await connection.execute( tag_query, [
+				let foreignTagId = await connection.query( tag_query, [
 					tags[j].name
 				]);
 				console.log(" < foreign Tag Id > ");
 				console.log(foreignTagId[0]);
 
 				if( foreignTagId[0] != 0 ){ // we catched the foreign Tag
-					let res = await connection.execute(relation_query, [
+					let res = await connection.query(relation_query, [
 						objResult[0].insertId,
 						foreignTagId[0][0].term_id
 					]);
 					console.log(" < search and create relation foreignTag > ");
 					console.log(res[0]);
 				}else{
-					let res2 = await connection.execute(new_tag_query,[
+					let res2 = await connection.query(new_tag_query,[
 						tags[j].name,
 						tags[j].name
 							.toLowerCase()
@@ -1063,7 +1119,7 @@ module.exports.exportObjects = async (projectID, db_params, callback) => {
 					foreignTagId = res2[0].insertId;
 					console.log("< foreignTagId >");
 					console.log(foreignTagId);
-					let res = await connection.execute(relation_query, [
+					let res = await connection.query(relation_query, [
 						objResult[0].insertId,
 						foreignTagId
 					]);
@@ -1072,11 +1128,9 @@ module.exports.exportObjects = async (projectID, db_params, callback) => {
 				}
 			}
 
-			console.log(" < logID > ");
-			var logID = await createExportLog(projectID);
-			console.log( logID );
 
-			let mapTheObjRes = await myquery( query2, [logID, objs[i].id]);
+
+			let mapTheObjRes = await myquery( query2, [logID, objects[i].id]);
 			console.log(" < mapTheObjRes > ");
 			console.log(mapTheObjRes);
 		}

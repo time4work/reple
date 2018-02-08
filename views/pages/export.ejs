@@ -63,16 +63,22 @@ var unmmaped_objs_size = <%=scope.objs.length%>;
 
 	$(function(){
 		$("#export-push").on('click', ()=>{
-			console.log("push");
+			console.log("push click");
 			if(unmmaped_objs_size == 0){
 				alert("There is no unmmaped objects");
 				return;
 			}
-			data = {type: "project.export.push"}
-		    ajax('/project/'+project_id+'/export/', data, (result)=>{
-		        console.log(result);
-		        location.reload();
-	    	});
+
+      if( confirm("are you sure?") ){ 
+        data = {type: "project.export.push"};
+
+        ajax('/project/'+project_id+'/export/', {
+          type: "project.export.push"
+        }, (result)=>{
+          console.log(result);
+          location.reload();
+        });
+      }
 		});
 
 	});
