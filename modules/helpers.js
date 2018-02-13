@@ -1,6 +1,6 @@
 /////////////////////////////////////////////
-const fs 		= require('fs');
-const async 	= require('async');
+const fs = require('fs');
+const async = require('async');
 const PythonShell = require('python-shell');
 
 const MYSQL 	= require('./mysql').connection;
@@ -9,8 +9,10 @@ const ASYNSQL 	= require('./mysql').asynccon;
 const POOLCON 	= require('./mysql').pool;
 const CHILDCON 	= require('./mysql').childcon;
 const CHILDPOOL = require('./mysql').chilpool;
-const scraperModule 	= require('./scraper');
+
+const scraperModule = require('./scraper');
 const ffmpegModule 	= require('./ffmpeg');
+const Tree	= require('./tree');
 
 const punctREGEX = /[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g;
 
@@ -20,6 +22,19 @@ PythonShell.defaultOptions = {
     pythonPath: 'python3'
 };
 /////////////////////////////////////////////
+function arrayUniq(a) {
+   return Array.from(new Set(a));
+}
+function arrayLowerCase(a) {
+	var tmp = [];
+	for(var i=0; i<a.length; i++){
+		tmp.push( a[i].toLowerCase() )
+	}
+	return tmp;
+}
+function rand(items){
+    return items[~~(Math.random() * items.length)];
+}
 async function myquery(query, params, callback){ // !
 	try {
 		const connection 	= await ASYNSQL(); // !
@@ -116,9 +131,8 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 		console.log(positiveArr);
 		console.log(negetiveArr);
 
-		let originalIDarr = await findFilteredOriginal(connection, projectID, {positive:positiveArr, negetive:negetiveArr});
 		// let originalIDarr = await findFilteredOriginal(connection, {positive:positiveArr, negetive:negetiveArr});
-		// query += " ORDER BY RAND() LIMIT 1 ";
+		let originalIDarr = await findFilteredOriginal(connection, projectID, {positive:positiveArr, negetive:negetiveArr});
 		console.log(originalIDarr);
 
 		if(size>originalIDarr.length)
@@ -160,14 +174,21 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				}
 				console.log(' < synTags >');
 				console.log(synTags);
+
+				// template key lib 
+				let tmpl_lib_pack = await Tree.selectLibraryItems();
+				let tmpl_lib = await Tree.parseLibObj(tmpl_lib_pack);
+
+				// description tmpl 
 				let d_tmpl_pack = await selectProjectDescriptionTemplate(projectID,synTags);
 				// console.log(' < tmpl_pack >');
 				// console.log(tmpl_pack);
-				let d_tmpl = await parseTmplObj(d_tmpl_pack);
+
+				let d_tmpl = await Tree.parseTmplObj(d_tmpl_pack);
 				// console.log(' < tmpl >');
 				// console.log(tmpl);
 
-				let description = await templateParse( d_tmpl['talk'], d_tmpl );
+				let description = await Tree.libraryKeyParse( Tree.templateParse(d_tmpl['talk'], d_tmpl), tmpl_lib);
 				console.log(' < description >');
 				console.log(description);	
 
@@ -176,11 +197,12 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				let t_tmpl_pack = await selectProjectTitleTemplate(projectID, synTags);
 				// console.log(' < tmpl_pack >');
 				// console.log(tmpl_pack);
-				let t_tmpl = await parseTmplObj(t_tmpl_pack);
+
+				let t_tmpl = await Tree.parseTmplObj(t_tmpl_pack);
 				// console.log(' < tmpl >');
 				// console.log(tmpl);
 
-				let title = await templateParse( t_tmpl['talk'], t_tmpl );
+				let title = await Tree.libraryKeyParse( Tree.templateParse(t_tmpl['talk'], t_tmpl), tmpl_lib);
 				console.log(' < title >');
 				console.log(title);
 
@@ -190,18 +212,9 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				await createRelationTagObj(objID, originalTags);
 			});
 		}
-
-		// 		console.log(tags);
-		// 		console.log(result);
-		// 		result.tags = tags;
-
-		// 		var obj = JSON.parse(fs.readFileSync('./modules/template2.json', 'utf8'));
-		// 		result.description = await templateParse( obj['start'], obj );
 		result = originalIDarr;
 		if(callback)
 			await callback(result);
-		// 	})
-		// });
 	} catch (e) {
 		console.log(e);
 		return 0;
@@ -269,8 +282,6 @@ async function createObject(projectID,originalID,title, description, videolink, 
 		let relation2 = await myquery(query, [ projectID,originalID ]);
 		console.log(relation2);
 
-		// if(callback)
-		// 	await callback(result);
 		return objectID;
 
 	} catch (e) {
@@ -278,25 +289,54 @@ async function createObject(projectID,originalID,title, description, videolink, 
 		return 0;
 	}
 }
-async function parseTmplObj(json){
-	var tmpl_arr= json.map((item)=>{
-		var obj = {};
-		obj[item['keyword']] = [];
-		return obj;
-	});
-	var tmpls = {};
-	Array.prototype.forEach.call(tmpl_arr,function(elem) {
-	   var keys = Object.keys(elem);
-	   tmpls[keys[0]] = elem[keys[0]];
-	});
-	for(var i=0; i<json.length; i++){
-		var key = json[i]['keyword']
-		// console.log(key);
-		var val = json[i]['val']
-		// console.log(val);
-		tmpls[key].push(val);
+async function selectLibraryItems (callback) {
+	try {
+		var query = ""
+			+ " SELECT r.id as `keyID`, r.name as `key`, res2.id as `valueID`, res2.value "
+			+ " FROM replecon.libraryKey r "
+			+ " left join "
+			+ " 	( "
+			+ " 		select * "
+			+ " 		from  replecon.libraryRelation "
+			+ " 	) as res on res.keyID = r.id  "
+			+ " left join "
+			+ " ( "
+			+ " 	select * "
+			+ " 	from  replecon.libraryValue "
+			+ " ) as res2 on res2.id = res.valueID ";
+		let result = await myquery(query, []);
+		// console.log(result);
+
+		let list = [...new Set(result.map(item => item.key))]
+		.map((key)=>{
+			return {key: key, values: []}
+		});
+		// console.log(list);
+
+		result.forEach((item,i,arr)=>{
+			let _key = result[i].key;
+
+			for(var j=0; j<list.length; j++){
+				if( list[j].key==_key ){
+					list[j].id = item.keyID;
+					if(item.value!=null)
+						list[j].values.push( {
+							id:item.valueID,
+							value:item.value,
+						});
+				}
+			}
+		});
+		console.log(list);
+
+		if(callback)
+			await callback(list);
+		return list;
+
+	} catch (e) {
+		console.log(e);
+		return 0;
 	}
-	return tmpls;
 }
 async function selectProjectDescriptionTemplate (projectID, tagIDs, callback)  {
 	try {
@@ -320,14 +360,6 @@ async function selectProjectDescriptionTemplate (projectID, tagIDs, callback)  {
 		console.log(keys);
 
 // ----------------------------------------------------
-
-		// console.log(tags);
-		// let tagIDs = [];
-		// for(var i=0; i<tags.length; i++){
-		// 	tagIDs.push(tags[i].id);
-		// }
-		// console.log(" < tagIDs >");
-		// console.log(tagIDs);
 
 		query = ""
 			+ " SELECT *"
@@ -421,14 +453,6 @@ async function selectProjectTitleTemplate (projectID, tagIDs, callback)  {
 
 // ----------------------------------------------------
 
-		// console.log(tags);
-		// let tagIDs = [];
-		// for(var i=0; i<tags.length; i++){
-		// 	tagIDs.push(tags[i].id);
-		// }
-		// console.log(" < tagIDs >");
-		// console.log(tagIDs);
-
 		query = ""
 			+ " SELECT *"
 			+ " FROM templateCondition"
@@ -473,7 +497,6 @@ async function selectProjectTitleTemplate (projectID, tagIDs, callback)  {
 							console.log('tagIDs.indexOf(p_condition[j].tagID)');
 							console.log(true);
 							bool = true;
-							// break;
 						} 
 					}
 				}
@@ -484,44 +507,12 @@ async function selectProjectTitleTemplate (projectID, tagIDs, callback)  {
 						bool = true;
 						if( tagIDs.indexOf(n_condition[j].tagID > -1 ) ){
 							bool = false;
-							// break;
 						} 
 					}
 				}
 				if( bool ) result.push(keys[i]);
 			}
 		}
-		// 	for(var i=0; i<keys.length; i++){
-		// 		console.log();
-		// 		var bool = true;
-		// 		console.log(keys[i]);
-
-		// 		for(var j=0; j<condition.length; j++){
-		// 			console.log(condition[j]);
-				
-		// 			if( keys[i].id == condition[j].tmplKeyID ){
-		// 				// condition[j].positive
-		// 				if(condition[j].positive)
-		// 					bool = false;
-		// 				else
-		// 					bool = true;
-
-		// 				for(var g=0; g<tags.length; g++){
-		// 					console.log(tags[g]);
-		// 					console.log(condition[j].tagID + " == " + tags[g].tagID);
-		// 					console.log(condition[j].positive);
-		// 					if( condition[j].tagID == tags[g].tagID ){
-		// 						bool = condition[j].positive 
-		// 						? true
-		// 						: false;
-		// 					}
-		// 					console.log("bool "+ bool);
-		// 				}
-		// 			}
-		// 		}
-		// 		console.log(keys[i]);
-		// 		if( bool ) result.push(keys[i]);
-		// 	}
 		console.log(result);
 // ----------------------------------------------------
 		if(callback)
@@ -569,13 +560,7 @@ async function findFilteredOriginal(connection, projectID, tagIDs){
 				else
 					query += " " + tagIDs.positive[j] + ", ";
 			}
-			query += " ) ";			
-			// for(var j=0; j<tagIDs.positive.length; j++){
-			// 	if(j==0)
-			// 		query += " WHERE tagID = " + tagIDs.positive[j];
-			// 	else
-			// 		query += " OR tagID = " + tagIDs.positive[j];
-			// }
+			query += " ) ";	
 		}
 
 		if(tagIDs.negetive.length > 0){
@@ -1612,8 +1597,8 @@ module.exports.saveTagChanges = async (tagID, name, newsyns, callback) => {
 				console.log("flag:"+_flag.flag);
 				flag = _flag.flag
 				if(flag == null)
-					await createTagFlag(tagID, async (newflag)=>{
-						flag = newflag.flag;
+					await setTagFlag(tagID, async (newflag)=>{
+						flag = tagID;
 					});
 				await saveTagSyns({new:newTag,lost:lostTag},flag);
 			});
@@ -1860,7 +1845,7 @@ module.exports.createTagTemplate = async (tagID,keyword,val, callback) => {
 		var flag = await selectTagFlag(tagID).flag;
 		console.log(flag);
 		if(!flag){				
-			await createTagFlag(tagID);
+			await setTagFlag(tagID);
 			flag = tagID;
 		}
 		let result = await myquery(query, [ flag, keyword, val ]);
@@ -2031,7 +2016,7 @@ async function selectTagFlag(tagID, callback){
 		return 0;
 	}
 }
-async function createTagFlag(tagID, callback){
+async function setTagFlag(tagID, callback){
 	try {
 		let query = 'UPDATE tag SET flag = id WHERE id = ?';
 		let result = await myquery( query, [tagID] );
@@ -2764,17 +2749,21 @@ async function saveJson(name,date,size,callback){
 }
 /////////////////////////////////////////////
 module.exports.saveJson = async function(json, name, callback){
-	let length = json.length;
-	let data = JSON.stringify(json);  
-	var date = new Date();
-	var _name = "./json/"+name;
+	try {
+		let length = json.length;
+		let data = JSON.stringify(json);  
+		var date = new Date();
+		var _name = "./json/"+name;
 
-	await fs.writeFileSync(_name, data); 
-	await saveJson(name,date,length);
+		await fs.writeFileSync(_name, data); 
+		await saveJson(name,date,length);
 
-	console.log(' Json Saaved ! ');
-	if(callback)
-		await callback();
+		console.log(' Json Saaved ! ');
+		if(callback)
+			await callback();
+	} catch (e) {
+		console.log(e);
+	}
 }
 /////////////////////////////////////////////
 module.exports.importJson = async function(json, callback){ // !
@@ -2889,8 +2878,16 @@ async function tagsParse(connection, tags){
 	return tagIds;
 }
 async function magic(connection, item){
-	let tags = item.tags.split(/,/g);
 	let ids = {};
+	let tags;
+	console.log(item.tags);
+	if( typeof item.tags == "string" )
+		tags = item.tags.split(/,/g);
+	else if( Array.isArray(item.tags) )
+		tags = item.tags;
+	else console.log("wrong type of tags");
+
+	if( item.href ) tags.push( item.href );
 
 	ids.tags = await tagsParse(connection, tags);
 
@@ -2900,47 +2897,54 @@ async function magic(connection, item){
 
 	return ids;
 }
-function templateParse(e, obj){
-	var regexp = /<\w*>/ig;
+// function libraryKeyParse(e, lib){
+// 	var regexp = /\[\w*\]/ig;
 
-	// console.log('- e:');
-	// console.log(e);
-	// console.log('-----');
-
-	if ( Array.isArray(e) ){
-		return templateParse( rand(e), obj );
-	}
-	else{
-		if( /<\w*>/i.test(e) ){
-			var result = '';
-			var last_pos = 0;
-			while ( foo = regexp.exec(e)) {
-				result += e.substring(last_pos,foo.index);
+// 	if ( Array.isArray(e) ){
+// 		return libraryKeyParse( rand(e), lib);
+// 	}
+// 	else{
+// 		if( /\[\w*\]/i.test(e) ){
+// 			var result = '';
+// 			var last_pos = 0;
+// 			while ( foo = regexp.exec(e)) {
+// 				result += e.substring(last_pos,foo.index);
 				
-				var ind = foo[0].replace(/[<>]*/g,'');
-				result += templateParse( obj[ind], obj );
-				last_pos = regexp.lastIndex;
-			}
-			result += e.substring(last_pos,e.length);
-			return result;
-		}else{
-			return e;
-		}
-	}
-}
-function arrayUniq(a) {
-   return Array.from(new Set(a));
-}
-function arrayLowerCase(a) {
-	var tmp = [];
-	for(var i=0; i<a.length; i++){
-		tmp.push( a[i].toLowerCase() )
-	}
-	return tmp;
-}
-function rand(items){
-    return items[~~(Math.random() * items.length)];
-}
+// 				var ind = foo[0].replace(/[\[\]]*/g,'');
+// 				result += libraryKeyParse( lib[ind], lib );
+// 				last_pos = regexp.lastIndex;
+// 			}
+// 			result += e.substring(last_pos,e.length);
+// 			return result;
+// 		}else{
+// 			return e;
+// 		}
+// 	}
+// }
+// function templateParse(e, obj){
+// 	var regexp = /<\w*>/ig;
+
+// 	if ( Array.isArray(e) ){
+// 		return templateParse( rand(e), obj );
+// 	}
+// 	else{
+// 		if( /<\w*>/i.test(e) ){
+// 			var result = '';
+// 			var last_pos = 0;
+// 			while ( foo = regexp.exec(e)) {
+// 				result += e.substring(last_pos,foo.index);
+				
+// 				var ind = foo[0].replace(/[<>]*/g,'');
+// 				result += templateParse( obj[ind], obj );
+// 				last_pos = regexp.lastIndex;
+// 			}
+// 			result += e.substring(last_pos,e.length);
+// 			return result;
+// 		}else{
+// 			return e;
+// 		}
+// 	}
+// }
 /////////////////////////////////////////////
 // module.exports.sqlPush = (query, callback) => {
 // 	var connection 		= new MYSQL();

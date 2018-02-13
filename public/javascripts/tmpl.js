@@ -37,7 +37,7 @@ function libraryKeyParse(e, lib){
 	console.log('- e: '+e);
 
 	if ( Array.isArray(e) ){
-		return templateParse( rand(e), lib);
+		return libraryKeyParse( rand(e), lib);
 	}
 	else{
 		if( /\[\w*\]/i.test(e) ){
@@ -47,7 +47,7 @@ function libraryKeyParse(e, lib){
 				result += e.substring(last_pos,foo.index);
 				
 				var ind = foo[0].replace(/[\[\]]*/g,'');
-				result += templateParse( lib[ind], lib );
+				result += libraryKeyParse( lib[ind], lib );
 				last_pos = regexp.lastIndex;
 				console.log('[ result ]: '+result);
 			}
@@ -55,6 +55,59 @@ function libraryKeyParse(e, lib){
 			return result;
 		}else{
 			return e;
+		}
+	}
+}
+// calculate number of tmpl probabilities 
+function tmplProbabilities(e, obj, lib){
+	var regexp = /<\w*>/ig;
+
+	if ( Array.isArray(e) ){ // if e - array
+		var probability = 0;
+		for(var i=0;i<e.length;i++){
+			probability += tmplProbabilities( e[i], obj, lib);
+		}
+		return probability;
+	}
+	else{	
+		if( /<\w*>/i.test(e) ){ // if e - string with keys
+			var arr = [];
+			while ( foo = regexp.exec(e)) {
+				var key = foo[0].replace(/[<>]*/g,'');
+				arr.push( tmplProbabilities(obj[key], obj, lib) );
+			}
+			return arr.reduce(function(prev, next) {
+				return prev * next;
+			});
+		}else{ // if e - string
+			return 1;
+		}
+	}
+}
+// calculate number of lib probabilities 
+function libProbabilities(e, obj, lib){
+	var regexp = /\[\w*\]/ig;
+
+	if ( Array.isArray(e) ){ // if e - array
+		// var probability = 0;
+		// for(var i=0;i<e.length;i++){
+		// 	probability += tmplProbabilities( e[i], obj, lib);
+		// }
+		// return probability;
+		return e.length;
+	}
+	else{	
+		if( /\[\w*\]/i.test(e) ){
+			var arr = [];
+			while ( foo = regexp.exec(e)) {
+				var key = foo[0].replace(/[\[\]]*/g,'');
+				arr.push( tmplProbabilities(obj[key], obj, lib) );
+			}
+			return arr.reduce(function(prev, next) {
+				return prev * next;
+			});
+		}else{ // if e - string
+			return 0;
 		}
 	}
 }
@@ -72,9 +125,9 @@ function parseTmplObj(json){
 	   var keys = Object.keys(elem);
 	   tmpl[keys[0]] = elem[keys[0]];
 	});
-	for(var i=0; i<tmpl_pack.length; i++){
-		var key = tmpl_pack[i]['keyword'];
-		var val = tmpl_pack[i]['val'];
+	for(var i=0; i<json.length; i++){
+		var key = json[i]['keyword'];
+		var val = json[i]['val'];
 		// console.log(key);
 		// console.log(val);
 		tmpl[key].push(val);
@@ -92,9 +145,9 @@ function parseLibObj(json){
 	   var keys = Object.keys(elem);
 	   lib[keys[0]] = elem[keys[0]];
 	});
-	for(var i=0; i<lib_pack.length; i++){
-		var key = lib_pack[i]['key'];
-		var val_arr = lib_pack[i]['values'];
+	for(var i=0; i<json.length; i++){
+		var key = json[i]['key'];
+		var val_arr = json[i]['values'];
 		console.log(key);
 		console.log(val_arr);
 		for(var j=0; j<val_arr.length; j++){
@@ -103,7 +156,6 @@ function parseLibObj(json){
 	}
 	return lib;
 }
-
 $(function(){
 	var _console = $('section.p-console');
 	if(_console){
@@ -111,9 +163,19 @@ $(function(){
 			console.log(event);
 			if(event.keyCode == 13){
 				var msg = $('section.p-console input').val();
+				var tmpl_result = templateParse(msg,tmpl);
+				var result = libraryKeyParse(tmpl_result,lib);
+
+				var tmpl_probability = tmplProbabilities(msg,tmpl);
+				var lib_probability = libProbabilities(tmpl_result ,lib )
+				var prob_result = tmpl_probability
+				if(lib_probability > 0 )
+					prob_result = prob_result * lib_probability;
+
 				$('section.p-console ul.output').append( "<hr>" );
-				var output = libraryKeyParse(templateParse(msg,tmpl),lib);
-				$('section.p-console ul.output').append( "<li>= result: "+output+"</li>" );
+				$().append(  );
+				$('section.p-console ul.output').append( "<li>= number of probabilities: "+prob_result+"</li>" );
+				$('section.p-console ul.output').append( "<li>= result: "+result+"</li>" );
 				$('section.p-console ul.output').append( "<hr>" );
 			}
 		});

@@ -909,6 +909,11 @@ section#export-body .info-table h5 {
     letter-spacing: 4px;
     background: aliceblue;
 }
+#project-database .details-body div#p-host-body > div {
+    display: block;
+    width: 50%;
+    float: left;
+}
 #project-database .details-body input.radio {
     font-size: 10px;
     height: 11px;
