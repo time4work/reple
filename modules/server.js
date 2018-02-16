@@ -9,9 +9,12 @@ const logger 		= require('logops');
 const bodyParser 	= require('body-parser');
 const helpers 		= require('./helpers');
 const thumbManager 	= require('./thumb-maker');
+const cookieSession = require('cookie-session')
 /////////////////////////////////////////////
 const TM = new thumbManager('./screens/');
 /////////////////////////////////////////////
+const punctREGEX = /[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^`{|}~]/g;
+const punctREGEX2 = /[\u2000-\u206F\u2E00-\u2E7F\\"\\/<>\[\]^`{|}]/g;
 var JsonImportProgress = false;
 var JsonImportId = -1;
 /////////////////////////////////////////////
@@ -29,6 +32,12 @@ module.exports = function(params){
 	app.use( bodyParser.json({limit: '50mb'}) );
 	app.use( bodyParser.urlencoded({ extended: false,limit: '50mb', parameterLimit:50000 }) );
 	app.use( favicon('public/favicon.ico'));
+	app.use( cookieSession({
+		name: 'session',
+		// secret: '2abh1y235kiu.bvcew32def',
+		keys: ['pass', 'test'],
+		maxAge: 24 * 60 * 60 * 1000 // 24h
+	}));
 	app.use( (request, response, next) => {
 		var ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
 		console.log('________');
@@ -36,8 +45,32 @@ module.exports = function(params){
 		console.log(request.method);
 		console.log(request.url);
 		console.log(request.body);
-		next();
+		console.log(request.session);
+		if(request.url == '/login') next();
+		else{
+			request.session.test ='test';
+
+			if(request.session.pass == '2abh1y235kiu.bvcew32def'){
+				next();
+			}else{
+				response.redirect('/login');
+			}
+		}
+
 	});	
+
+	app.get('/login', (request, response) => { 
+		response.render('pages/login',{});
+	}); 
+	app.post('/login', (request, response) => { 
+		let login = request.body.login;
+		let password = request.body.password;
+
+		if(login == "root" && password == "morehipe"){
+			request.session.pass = '2abh1y235kiu.bvcew32def';
+			response.send({redirect:'/'});
+		}else response.send({error:'wrong login or password'})
+	}); 
 
 	app.get('/', (request, response) => { 
 		response.render('pages/index',{title : 'Happy ejs' });
@@ -367,7 +400,7 @@ module.exports = function(params){
 				console.log("newTemplate");
 				let key = request.body.key
 					.toLowerCase()
-					.replace(/[<>]*/g,'');
+					.replace(punctREGEX,'');
 				if(!key) return
 
 				let val = request.body.val;
@@ -552,7 +585,7 @@ module.exports = function(params){
 				project_id = request.body.id;
 				size = request.body.size;
 
-				await helpers.createProjectOriginal(project_id, size, (result)=>{
+				await helpers.createProjectObject(project_id, size, (result)=>{
 					response.send({res:result});
 					console.log(result);
 				})
@@ -578,7 +611,9 @@ module.exports = function(params){
 		switch(request.body.type){
 			case "library.key.create":
 				if(request.body.name){
-					let keyName = request.body.name;
+					let keyName = request.body.name
+						.toLowerCase()
+						.replace(punctREGEX,'');
 					await helpers.createLibraryKey(keyName, async (result)=>{
 						response.send({status:'ok'});
 					});
@@ -595,7 +630,9 @@ module.exports = function(params){
 			case "library.key.value.add":
 				if(request.body.id && request.body.value){
 					let keyID = request.body.id;
-					let keyValue = request.body.value;
+					let keyValue = request.body.value
+						.toLowerCase()
+						.replace(punctREGEX2,'');
 					await helpers.addLibraryKeyValue(keyValue, async(valueID)=>{
 						await helpers.createRelationLibraryKeyValue(keyID, valueID, async()=>{
 							response.send({status:'ok'});

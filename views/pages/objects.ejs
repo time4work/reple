@@ -120,17 +120,15 @@
     data.type = 'objects.thumbs.check';
 
       ajax('/project/'+projectID+'/objects/', data, (result)=>{
-        // console.log(result);
+        console.log(result);
         if(!result.status){
           $('.controller-row.thumb-maker').removeClass('active');
         }
         else{
-          // console.log(result.time);
-          // console.log(new Date());
-          var mseconds = new Date().getTime() - Date.parse(result.time);
+          var mseconds = -1*(result.time)-6000;
           // console.log(mseconds);
           var date = new Date(null);
-          date.setMilliseconds(mseconds - 60000);
+          date.setMilliseconds(mseconds);
           var time = date.toISOString().substr(11, 8);
           var step = result.step;
           $('.controller-row.thumb-maker').addClass('active');

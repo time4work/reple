@@ -10,7 +10,7 @@ const connection 	= mysql.createConnection({
 /////////////////////////////////////////////
 var queries = {
 	'setting-FK-check': 	'SET foreign_key_checks=0',
-	'database': 	'CREATE DATABASE IF NOT EXISTS  replecon',
+	'database': 	'CREATE DATABASE IF NOT EXISTS  replecon CHARACTER SET utf8 COLLATE utf8_general_ci',
 	'project': 		'CREATE TABLE IF NOT EXISTS replecon.project (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255),  description VARCHAR(1500), UNIQUE(name))ENGINE = InnoDB',
 	'tag': 			'CREATE TABLE IF NOT EXISTS replecon.tag (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), flag INT(4), UNIQUE(name) )ENGINE = InnoDB',
 	'original': 	'CREATE TABLE IF NOT EXISTS replecon.original (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), link VARCHAR(600), video VARCHAR(600),  description VARCHAR(1500))ENGINE = InnoDB',
@@ -110,10 +110,10 @@ var queries = {
 			+ " DataDate3 DATETIME , "
 			+ " DataDate4 DATETIME , "
 
-			+ " DataLink1 VARCHAR(300) , " // video link
-			+ " DataLink2 VARCHAR(350) , " // thumbs
-			+ " DataLink3 VARCHAR(100) , " // baseThumb
-			+ " DataLink4 VARCHAR(100) , " // bigThumb
+			+ " DataLink1 VARCHAR(500) , " // video link
+			+ " DataLink2 VARCHAR(550) , " // thumbs
+			+ " DataLink3 VARCHAR(500) , " // baseThumb
+			+ " DataLink4 VARCHAR(500) , " // bigThumb
 
 			+ " DataContext VARCHAR(500) , "
 

@@ -10,12 +10,12 @@ let thumbManager = class{
         this.dir = dir;
         // this.idArr = [];
         this.processArr = {};
-        this.timer = new Date().toString(); 
-        console.log(this.timer);
+        // this.timer = new Date().toString(); 
+        // console.log(this.timer);
     }
-    async createProcess(projectID, objects, time){
-        if(time)
-            this.time = time;
+    async createProcess(projectID, objects){
+        // if(time)
+        this.timer = new Date().getTime();
         if( this.processArr.hasOwnProperty(projectID) )
             return 'TM alredy busy with process['+projectID+']'
         let process = await new thumbMaker(this.dir);
@@ -23,7 +23,9 @@ let thumbManager = class{
             id: projectID,
             tm: process,
         };
-        this.processArr[projectID].tm.make(objects);
+        this.processArr[projectID].tm.make(objects, async()=>{
+            delete this.processArr[projectID];
+        });
         return 'TM process was created';
     }
     test(projectID){
@@ -38,7 +40,7 @@ let thumbManager = class{
         return {
             status: status,
             step: step,
-            time: this.timer,
+            time: this.timer - new Date().getTime(),
         }
     }
     async stopProcess(projectID){
@@ -68,101 +70,114 @@ let thumbMaker = class {
         return this.iterator;
     }
     // main
-    async make(objects){
-        if(this.process)
-            return;
-        this.process = true;
-        this.xvfb.startSync();
-        console.log('._._._.');
-        for(var i=0; i<=objects.length; i++){
-            this.iterator = i;
-			//  simpleThumbsNames
-			// 	baseThumbName
-			// 	bigThumbName
-			// 	duration
-            var namePrefix = makeid(8);
+    async make(objects, callback){
+        try{
+            if(this.process)
+                return;
+            this.process = true;
+            this.xvfb.startSync();
+            console.log('._._._.');
+            for(var i=0; i<objects.length; i++){
+                this.iterator = i;
+    			//  simpleThumbsNames
+    			// 	baseThumbName
+    			// 	bigThumbName
+    			// 	duration
+                var namePrefix = makeid(8);
 
-            console.log('catch obj ['+i+']');
+                console.log('catch obj ['+i+']');
 
-            if(!this.process) break;
+                if(!this.process) {
+                    break;
+                    if(callback) await callback();
+                }
+                console.log(objects[i]);
 
-            if( !objects[i].DataLink2 || !objects[i].DataLink3 || !objects[i].DataLink4 ) 
-                await scraperModule.getLink(objects[i].DataLink1)
-            	.then((result)=>{
-					console.log(' -> result video link');
-            		console.log(result);
+                if( !objects[i].DataLink2 || !objects[i].DataLink3 || !objects[i].DataLink4 ) 
+                    await scraperModule.getLink(objects[i].DataLink1)
+                	.then((result)=>{
+    					console.log(' -> result video link');
+                		console.log(result);
+                		if(result) this.videolink = result;
 
-            		if(result) this.videolink = result;
-            	})
-            	.then(async()=>{ // do makeBaseThumb
-            		console.log(' --> do baseThumb');
-            		if(this.videolink && !objects[i].DataLink3){
-                        let res = await this.makeBaseThumb(namePrefix);
-                        if(res){
-                            this.duration = res.duration;
-                            this.baseThumbName = res.name;
-                            return res;
-                        }                        
-            		}
-            		return 0;
-            	}) 
-            	.then(async(params)=>{ // save makeBaseThumb,duration
-            		console.log(' ---> save baseThumb');
-            		if(params){
-                        await this.saveBaseThumb(objects[i].id);
-                        
-                        if(!objects[i].DataText3)
-                            await this.saveDuration(objects[i].id);
-            		}
-            	})
-            	.then(async()=>{  // do bigThumbName
-            		console.log(' --> do bigThumb');
-            		if(this.videolink && !objects[i].DataLink4){
-                        let res = await this.makeBigThumb(namePrefix);
-                        if(res){
-                            this.duration = res.duration;
-                            this.bigThumbName = res.name;
-                            return res;
+                	}, function(e) {
+                        console.log('TM reject '+e);
+                        return;
+                    })
+                	.then(async()=>{ // do makeBaseThumb
+                		console.log(' --> do baseThumb');
+                		if(this.videolink && !objects[i].DataLink3){
+                            let res = await this.makeBaseThumb(namePrefix);
+                            if(res){
+                                this.duration = res.duration;
+                                this.baseThumbName = res.name;
+                                return res;
+                            }                        
+                		}
+                		return 0;
+                	}) 
+                	.then(async(params)=>{ // save makeBaseThumb,duration
+                		console.log(' ---> save baseThumb');
+                		if(params){
+                            await this.saveBaseThumb(objects[i].id);
+                            
+                            if(!objects[i].DataText3)
+                                await this.saveDuration(objects[i].id);
+                		}
+                	})
+                	.then(async()=>{  // do bigThumbName
+                		console.log(' --> do bigThumb');
+                		if(this.videolink && !objects[i].DataLink4){
+                            let res = await this.makeBigThumb(namePrefix);
+                            if(res){
+                                this.duration = res.duration;
+                                this.bigThumbName = res.name;
+                                return res;
+                            }
+                		}
+                		return 0;
+                	})
+                	.then(async(params)=>{  // save bigThumbName,duration
+                		console.log(' ---> save bigThumb');
+                		if(params){
+                			await this.saveBigThumb(objects[i].id);
+
+                            if(!objects[i].DataText3)
+                                await this.saveDuration(objects[i].id);
+                		}
+                	})
+                	.then(async()=>{ // do makeSimpleThumbs
+                		console.log(' --> do simpleThumbs');
+                		if(this.videolink){
+                            let res = await this.makeSimpleThumbs(namePrefix);
+                            if(res){
+                                this.duration = res.duration;
+                                this.simpleThumbNames = res.names;
+                                return res;
+                            }
+                			// return [simpleThumbsNames,duration] = await this.makeThumbs();
+                			// return await this.makeSimpleThumbs();
+                		}
+                		return 0;
+                	})
+                    .then(async(params)=>{ // save simpleThumbsNames,duration
+                        console.log(' ---> save simpleThumbs');
+                        if(params){
+                            await this.saveSimpleThumbs(objects[i].id);
+                            
+                            if(!objects[i].DataText3)
+                                await this.saveDuration(objects[i].id);
                         }
-            		}
-            		return 0;
-            	})
-            	.then(async(params)=>{  // save bigThumbName,duration
-            		console.log(' ---> save bigThumb');
-            		if(params){
-            			await this.saveBigThumb(objects[i].id);
-
-                        if(!objects[i].DataText3)
-                            await this.saveDuration(objects[i].id);
-            		}
-            	})
-            	.then(async()=>{ // do makeSimpleThumbs
-            		console.log(' --> do simpleThumbs');
-            		if(this.videolink){
-                        let res = await this.makeSimpleThumbs(namePrefix);
-                        if(res){
-                            this.duration = res.duration;
-                            this.simpleThumbNames = res.names;
-                            return res;
-                        }
-            			// return [simpleThumbsNames,duration] = await this.makeThumbs();
-            			// return await this.makeSimpleThumbs();
-            		}
-            		return 0;
-            	})
-                .then(async(params)=>{ // save simpleThumbsNames,duration
-                    console.log(' ---> save simpleThumbs');
-                    if(params){
-                        await this.saveSimpleThumbs(objects[i].id);
-                        
-                        if(!objects[i].DataText3)
-                            await this.saveDuration(objects[i].id);
-                    }
-                }) 
-            	.catch(err => console.error(err));
+                    }) 
+                	.catch(err => console.error("TM reject "+err));
+            }
+            this.xvfb.stopSync();
+            this.process = false;
+            if(callback) await callback();
+        } catch (e) {
+            console.log(e);
+            return 0;
         }
-        this.xvfb.stopSync();
-        this.process = false;
     }
     // save duration
     async saveDuration(objectID){

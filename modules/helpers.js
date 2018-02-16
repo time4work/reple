@@ -113,7 +113,7 @@ module.exports.selectProjectOriginalSize = async (projectID, callback) => {
 		return 0;
 	}
 }
-module.exports.createProjectOriginal = async (projectID, size, callback) => {
+module.exports.createProjectObject = async (projectID, size, callback) => {
 	const connection 	= await ASYNSQL(); // !
 	try {
 		let positiveArr = [];
@@ -160,51 +160,86 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 				console.log(' < originalTags >');
 				console.log(originalTags);
 				let synTags = [];
-				for(var i=0; i<originalTags.length; i++){
+				for(var q=0; q<originalTags.length; q++){
 					console.log(' < originalTags[i].tagID >');
-					console.log(originalTags[i].tagID);
-					let syns = await selectTagSyns(originalTags[i].tagID);
+					console.log(originalTags[q].tagID);
+					let syns = await selectTagSyns(originalTags[q].tagID);
 					
 					if(syns.length > 0)
-						for(var j=0; j<syns.length; j++){
-							synTags.push(syns[j]);
+						for(var k=0; k<syns.length; k++){
+							synTags.push(syns[k]);
 						}
 					else	
-						synTags.push(originalTags[i].tagID);				
+						synTags.push(originalTags[q].tagID);				
 				}
 				console.log(' < synTags >');
 				console.log(synTags);
 
 				// template key lib 
-				let tmpl_lib_pack = await Tree.selectLibraryItems();
-				let tmpl_lib = await Tree.parseLibObj(tmpl_lib_pack);
+				let tmpl_lib_pack = await selectLibraryItems();
 
-				// description tmpl 
-				let d_tmpl_pack = await selectProjectDescriptionTemplate(projectID,synTags);
-				// console.log(' < tmpl_pack >');
-				// console.log(tmpl_pack);
+				// description tmpls 
+				let d_tmpl_packs = await selectProjectTemplates('description', projectID,synTags);
 
-				let d_tmpl = await Tree.parseTmplObj(d_tmpl_pack);
-				// console.log(' < tmpl >');
-				// console.log(tmpl);
+				if(d_tmpl_packs[0].length == 0)
+					return null;
 
-				let description = await Tree.libraryKeyParse( Tree.templateParse(d_tmpl['talk'], d_tmpl), tmpl_lib);
+				let description = null;
+				do{
+					console.log('do text');
+					let min = 0,
+						max = d_tmpl_packs.length-1;
+					var rand = min + Math.floor(Math.random() * (max + 1 - min));
+					let d_tmpl_pack = d_tmpl_packs[rand];
+					
+					d_tmpl_packs.splice(rand,1);
+
+					let tree = await new Tree('talk', d_tmpl_pack, tmpl_lib_pack);
+					description = await tree.createText();
+				}while(!description && d_tmpl_packs.length);
 				console.log(' < description >');
 				console.log(description);	
 
-					
+				if(!description) return null;
 
-				let t_tmpl_pack = await selectProjectTitleTemplate(projectID, synTags);
+				// @point3
+				let t_tmpl_packs = await selectProjectTemplates('title', projectID,synTags);
+				// await selectProjectTitleTemplates(projectID, synTags);
+				// let t_tmpl_pack = await selectProjectTitleTemplate(projectID, synTags);
 				// console.log(' < tmpl_pack >');
 				// console.log(tmpl_pack);
+				if(t_tmpl_packs[0].length == 0)
+					return null;
 
-				let t_tmpl = await Tree.parseTmplObj(t_tmpl_pack);
+
+				// let t_tmpl = await Tree.parseTmplObj(t_tmpl_pack);
 				// console.log(' < tmpl >');
 				// console.log(tmpl);
 
-				let title = await Tree.libraryKeyParse( Tree.templateParse(t_tmpl['talk'], t_tmpl), tmpl_lib);
+				// let title = await Tree.libraryKeyParse( Tree.templateParse(t_tmpl['talk'], t_tmpl), tmpl_lib);
+				// console.log(' < title >');
+				// console.log(title);
+
+				let title = null;
+				do{
+					console.log('do text');
+					let min = 0,
+						max = t_tmpl_packs.length-1;
+					var rand = min + Math.floor(Math.random() * (max + 1 - min));
+					let t_tmpl_pack = t_tmpl_packs[rand];
+					
+					t_tmpl_packs.splice(rand,1);
+
+					let tree = await new Tree('talk', t_tmpl_pack, tmpl_lib_pack);
+					title = await tree.createText();
+				}while(!title && t_tmpl_packs.length);
 				console.log(' < title >');
-				console.log(title);
+				console.log(title);	
+
+				if(!title) return null;
+
+
+
 
 				console.log(' < createObject >');
 				let objID = await createObject(projectID,originalID,title, description, video_link,donor_link,logID);
@@ -215,6 +250,7 @@ module.exports.createProjectOriginal = async (projectID, size, callback) => {
 		result = originalIDarr;
 		if(callback)
 			await callback(result);
+		return result;
 	} catch (e) {
 		console.log(e);
 		return 0;
@@ -232,6 +268,7 @@ async function createRelationTagObj(objID, tags){
 			console.log({tag: tagID, obj: objID});
 			await myquery(query, [ tagID, objID ]);
 		}
+		return;
 
 	} catch (e) {
 		console.log(e);
@@ -338,87 +375,99 @@ async function selectLibraryItems (callback) {
 		return 0;
 	}
 }
-async function selectProjectDescriptionTemplate (projectID, tagIDs, callback)  {
+// @point2
+async function selectProjectTemplates (type, projectID, tagIDs, callback)  {
 	try {
 		var query = ""
 			+ " SELECT *"
 			+ " FROM relationTmplProject"
-			+ " WHERE projectID = ? and type = 'description'"
-			+ " ORDER BY RAND() LIMIT 1 ";
-		let relation = await myquery(query, [ projectID ]);
+			+ " WHERE projectID = ? and type = ?";
+			// + " ORDER BY RAND() LIMIT 1 ";
+		let relation = await myquery(query, [ projectID,type ]);
+		console.log(" < tmpl relation >");
 		console.log(relation);
-		if(!relation[0])
-			return;
-		let tmplID = relation[0].tmplID;
-		console.log(tmplID);
 
-		query = ""
-			+ " SELECT *"
-			+ " FROM templateKey"
-			+ " WHERE tmplID = ?";
-		let keys = await myquery(query, [ tmplID ]);
-		console.log(keys);
+		if(!relation[0]){
+			console.log("oops");
+			return null;
+		}
 
-// ----------------------------------------------------
+		let result = [];
+		let tmplIDs = relation;
 
-		query = ""
-			+ " SELECT *"
-			+ " FROM templateCondition"
-			+ " WHERE tmplKeyID in "
-			+ " ("
-			+ " 	SELECT id "
-			+ " 	FROM templateKey"
-			+ " 	WHERE tmplID = ?"
-			+ " )";
-		let condition = await myquery(query, [ tmplID ]);
-		console.log(" < tmpl condition >");
-		console.log(condition);
+		for(let x=0; x<tmplIDs.length; x++){
+			let tmplID = tmplIDs[x].tmplID;
+			console.log(tmplID);
 
-		var result = [];
-		if(!condition)
-			result = keys;
-		else{
-			var n_condition = [],
-				p_condition = [];
-			for(var i=0; i<condition.length; i++){
-				if(condition[i].positive)
-					p_condition.push(condition[i]);
-				else
-					n_condition.push(condition[i]);
-			}
-			console.log(" < p_condition >");
-			console.log(p_condition);
-			console.log(" < n_condition >");
-			console.log(n_condition);
-			
+			let key_query = ""
+				+ " SELECT *"
+				+ " FROM templateKey"
+				+ " WHERE tmplID = ?";
+			let keys = await myquery(key_query, [ tmplID ]);
+			console.log(" < tmpl keys >");
+			console.log(keys);
 
-			console.log(" < tmpl condition check >");
-			for(var i=0; i<keys.length; i++){
-				var bool = true;
+			let condition_query = ""
+				+ " SELECT *"
+				+ " FROM templateCondition"
+				+ " WHERE tmplKeyID in "
+				+ " ("
+				+ " 	SELECT id "
+				+ " 	FROM templateKey"
+				+ " 	WHERE tmplID = ?"
+				+ " )";
+			let condition = await myquery(condition_query, [ tmplID ]);
+			console.log(" < tmpl condition >");
+			console.log(condition);
 
-				for(var j=0; j<p_condition.length; j++){
-					if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
+			var result_keys = [];
 
-						bool = false;
-						if( tagIDs.indexOf(p_condition[j].tagID) ){
-							bool = true;
-							break;
-						} 
-					}
+			if(!condition)
+				result_keys = keys;
+			else{
+				var n_condition = [],
+					p_condition = [];
+				for(var j=0; j<condition.length; j++){
+					if(condition[j].positive)
+						p_condition.push(condition[j]);
+					else
+						n_condition.push(condition[j]);
 				}
+				console.log(" < p_condition >");
+				console.log(p_condition);
+				console.log(" < n_condition >");
+				console.log(n_condition);
+				
 
-				for(var j=0; j<n_condition.length; j++){
-					if( n_condition[j].tmplKeyID == keys[i].id ){
+				console.log(" < tmpl condition check >");
+				for(var i=0; i<keys.length; i++){
+					var bool = true;
 
-						bool = true;
-						if( tagIDs.indexOf(n_condition[j].tagID) ){
+					for(var j=0; j<p_condition.length; j++){
+						if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
+
 							bool = false;
-							break;
-						} 
+							if( tagIDs.indexOf(p_condition[j].tagID) ){
+								bool = true;
+								break;
+							} 
+						}
 					}
+
+					for(var j=0; j<n_condition.length; j++){
+						if( n_condition[j].tmplKeyID == keys[i].id ){
+
+							bool = true;
+							if( tagIDs.indexOf(n_condition[j].tagID) ){
+								bool = false;
+								break;
+							} 
+						}
+					}
+					if( bool ) result_keys.push(keys[i]);
 				}
-				if( bool ) result.push(keys[i]);
 			}
+			result.push(result_keys);
 		}
 
 		if(callback)
@@ -430,100 +479,292 @@ async function selectProjectDescriptionTemplate (projectID, tagIDs, callback)  {
 		return 0;
 	}
 }
-async function selectProjectTitleTemplate (projectID, tagIDs, callback)  {
-	try {
-		var query = ""
-			+ " SELECT *"
-			+ " FROM relationTmplProject"
-			+ " WHERE projectID = ? and type = 'title'"
-			+ " ORDER BY RAND() LIMIT 1 ";
-		let relation = await myquery(query, [ projectID ]);
-		console.log(relation);
-		if(!relation[0])
-			return;
-		let tmplID = relation[0].tmplID;
-		// console.log(tmplID);
+// async function selectProjectDescriptionTemplate (projectID, tagIDs, callback)  {
+// 	try {
+// 		var query = ""
+// 			+ " SELECT *"
+// 			+ " FROM relationTmplProject"
+// 			+ " WHERE projectID = ? and type = 'description'"
+// 			+ " ORDER BY RAND() LIMIT 1 ";
+// 		let relation = await myquery(query, [ projectID ]);
+// 		console.log(relation);
+// 		if(!relation[0])
+// 			return;
+// 		let tmplID = relation[0].tmplID;
+// 		console.log(tmplID);
 
-		query = ""
-			+ " SELECT *"
-			+ " FROM templateKey"
-			+ " WHERE tmplID = ?";
-		let keys = await myquery(query, [ tmplID ]);
-		console.log(keys);
+// 		query = ""
+// 			+ " SELECT *"
+// 			+ " FROM templateKey"
+// 			+ " WHERE tmplID = ?";
+// 		let keys = await myquery(query, [ tmplID ]);
+// 		console.log(keys);
 
-// ----------------------------------------------------
+// // ----------------------------------------------------
 
-		query = ""
-			+ " SELECT *"
-			+ " FROM templateCondition"
-			+ " WHERE tmplKeyID in "
-			+ " ("
-			+ " 	SELECT id "
-			+ " 	FROM templateKey"
-			+ " 	WHERE tmplID = ?"
-			+ " )";
-		let condition = await myquery(query, [ tmplID ]);
-		console.log(" < tmpl condition >");
-		console.log(condition);
+// 		query = ""
+// 			+ " SELECT *"
+// 			+ " FROM templateCondition"
+// 			+ " WHERE tmplKeyID in "
+// 			+ " ("
+// 			+ " 	SELECT id "
+// 			+ " 	FROM templateKey"
+// 			+ " 	WHERE tmplID = ?"
+// 			+ " )";
+// 		let condition = await myquery(query, [ tmplID ]);
+// 		console.log(" < tmpl condition >");
+// 		console.log(condition);
 
-		var result = [];
-		if(!condition)
-			result = keys;
-		else{
-			var n_condition = [],
-				p_condition = [];
-			for(var i=0; i<condition.length; i++){
-				if(condition[i].positive)
-					p_condition.push(condition[i]);
-				else
-					n_condition.push(condition[i]);
-			}
-			console.log(" < p_condition >");
-			console.log(p_condition);
-			console.log(" < n_condition >");
-			console.log(n_condition);
+// 		var result = [];
+// 		if(!condition)
+// 			result = keys;
+// 		else{
+// 			var n_condition = [],
+// 				p_condition = [];
+// 			for(var i=0; i<condition.length; i++){
+// 				if(condition[i].positive)
+// 					p_condition.push(condition[i]);
+// 				else
+// 					n_condition.push(condition[i]);
+// 			}
+// 			console.log(" < p_condition >");
+// 			console.log(p_condition);
+// 			console.log(" < n_condition >");
+// 			console.log(n_condition);
 			
 
-			console.log(" < tmpl condition check >");
-			for(var i=0; i<keys.length; i++){
-				var bool = true;
+// 			console.log(" < tmpl condition check >");
+// 			for(var i=0; i<keys.length; i++){
+// 				var bool = true;
 
-				for(var j=0; j<p_condition.length; j++){
-					if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
-						console.log('p_condition[j].tmplKeyID');
-						console.log(p_condition[j].tmplKeyID);
-						bool = false;
-						if( tagIDs.indexOf(p_condition[j].tagID) > -1 ){
-							console.log('tagIDs.indexOf(p_condition[j].tagID)');
-							console.log(true);
-							bool = true;
-						} 
-					}
-				}
+// 				for(var j=0; j<p_condition.length; j++){
+// 					if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
 
-				for(var j=0; j<n_condition.length; j++){
-					if( n_condition[j].tmplKeyID == keys[i].id ){
+// 						bool = false;
+// 						if( tagIDs.indexOf(p_condition[j].tagID) ){
+// 							bool = true;
+// 							break;
+// 						} 
+// 					}
+// 				}
 
-						bool = true;
-						if( tagIDs.indexOf(n_condition[j].tagID > -1 ) ){
-							bool = false;
-						} 
-					}
-				}
-				if( bool ) result.push(keys[i]);
-			}
-		}
-		console.log(result);
-// ----------------------------------------------------
-		if(callback)
-			await callback(result);
-		return result;
+// 				for(var j=0; j<n_condition.length; j++){
+// 					if( n_condition[j].tmplKeyID == keys[i].id ){
 
-	} catch (e) {
-		console.log(e);
-		return 0;
-	}
-}
+// 						bool = true;
+// 						if( tagIDs.indexOf(n_condition[j].tagID) ){
+// 							bool = false;
+// 							break;
+// 						} 
+// 					}
+// 				}
+// 				if( bool ) result.push(keys[i]);
+// 			}
+// 		}
+
+// 		if(callback)
+// 			await callback(result);
+// 		return result;
+
+// 	} catch (e) {
+// 		console.log(e);
+// 		return 0;
+// 	}
+// }
+//@point4
+// async function selectProjectTitleTemplates (projectID, tagIDs, callback)  {
+// 	try {
+// 		var query = ""
+// 			+ " SELECT *"
+// 			+ " FROM relationTmplProject"
+// 			+ " WHERE projectID = ? and type = 'title'";
+// 		let relation = await myquery(query, [ projectID ]);
+// 		console.log(" < tmpl relation >");
+// 		console.log(relation);
+
+// 		if(!relation[0]){
+// 			console.log("oops");
+// 			return null;
+// 		}
+
+// 		let tmplID = relation[0].tmplID;
+// 		// console.log(tmplID);
+
+// 		query = ""
+// 			+ " SELECT *"
+// 			+ " FROM templateKey"
+// 			+ " WHERE tmplID = ?";
+// 		let keys = await myquery(query, [ tmplID ]);
+// 		console.log(keys);
+
+// // ----------------------------------------------------
+
+// 		query = ""
+// 			+ " SELECT *"
+// 			+ " FROM templateCondition"
+// 			+ " WHERE tmplKeyID in "
+// 			+ " ("
+// 			+ " 	SELECT id "
+// 			+ " 	FROM templateKey"
+// 			+ " 	WHERE tmplID = ?"
+// 			+ " )";
+// 		let condition = await myquery(query, [ tmplID ]);
+// 		console.log(" < tmpl condition >");
+// 		console.log(condition);
+
+// 		var result = [];
+// 		if(!condition)
+// 			result = keys;
+// 		else{
+// 			var n_condition = [],
+// 				p_condition = [];
+// 			for(var i=0; i<condition.length; i++){
+// 				if(condition[i].positive)
+// 					p_condition.push(condition[i]);
+// 				else
+// 					n_condition.push(condition[i]);
+// 			}
+// 			console.log(" < p_condition >");
+// 			console.log(p_condition);
+// 			console.log(" < n_condition >");
+// 			console.log(n_condition);
+			
+
+// 			console.log(" < tmpl condition check >");
+// 			for(var i=0; i<keys.length; i++){
+// 				var bool = true;
+
+// 				for(var j=0; j<p_condition.length; j++){
+// 					if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
+// 						console.log('p_condition[j].tmplKeyID');
+// 						console.log(p_condition[j].tmplKeyID);
+// 						bool = false;
+// 						if( tagIDs.indexOf(p_condition[j].tagID) > -1 ){
+// 							console.log('tagIDs.indexOf(p_condition[j].tagID)');
+// 							console.log(true);
+// 							bool = true;
+// 						} 
+// 					}
+// 				}
+
+// 				for(var j=0; j<n_condition.length; j++){
+// 					if( n_condition[j].tmplKeyID == keys[i].id ){
+
+// 						bool = true;
+// 						if( tagIDs.indexOf(n_condition[j].tagID > -1 ) ){
+// 							bool = false;
+// 						} 
+// 					}
+// 				}
+// 				if( bool ) result.push(keys[i]);
+// 			}
+// 		}
+// 		console.log(result);
+
+// // ----------------------------------------------------
+// 		if(callback)
+// 			await callback(result);
+// 		return result;
+
+// 	} catch (e) {
+// 		console.log(e);
+// 		return 0;
+// 	}
+// }
+// async function selectProjectTitleTemplate (projectID, tagIDs, callback)  {
+// 	try {
+// 		var query = ""
+// 			+ " SELECT *"
+// 			+ " FROM relationTmplProject"
+// 			+ " WHERE projectID = ? and type = 'title'"
+// 			+ " ORDER BY RAND() LIMIT 1 ";
+// 		let relation = await myquery(query, [ projectID ]);
+// 		console.log(relation);
+// 		if(!relation[0])
+// 			return;
+// 		let tmplID = relation[0].tmplID;
+// 		// console.log(tmplID);
+
+// 		query = ""
+// 			+ " SELECT *"
+// 			+ " FROM templateKey"
+// 			+ " WHERE tmplID = ?";
+// 		let keys = await myquery(query, [ tmplID ]);
+// 		console.log(keys);
+
+// // ----------------------------------------------------
+
+// 		query = ""
+// 			+ " SELECT *"
+// 			+ " FROM templateCondition"
+// 			+ " WHERE tmplKeyID in "
+// 			+ " ("
+// 			+ " 	SELECT id "
+// 			+ " 	FROM templateKey"
+// 			+ " 	WHERE tmplID = ?"
+// 			+ " )";
+// 		let condition = await myquery(query, [ tmplID ]);
+// 		console.log(" < tmpl condition >");
+// 		console.log(condition);
+
+// 		var result = [];
+// 		if(!condition)
+// 			result = keys;
+// 		else{
+// 			var n_condition = [],
+// 				p_condition = [];
+// 			for(var i=0; i<condition.length; i++){
+// 				if(condition[i].positive)
+// 					p_condition.push(condition[i]);
+// 				else
+// 					n_condition.push(condition[i]);
+// 			}
+// 			console.log(" < p_condition >");
+// 			console.log(p_condition);
+// 			console.log(" < n_condition >");
+// 			console.log(n_condition);
+			
+
+// 			console.log(" < tmpl condition check >");
+// 			for(var i=0; i<keys.length; i++){
+// 				var bool = true;
+
+// 				for(var j=0; j<p_condition.length; j++){
+// 					if( p_condition[j].tmplKeyID == keys[i].id ){ // есть положительное условие для ключа
+// 						console.log('p_condition[j].tmplKeyID');
+// 						console.log(p_condition[j].tmplKeyID);
+// 						bool = false;
+// 						if( tagIDs.indexOf(p_condition[j].tagID) > -1 ){
+// 							console.log('tagIDs.indexOf(p_condition[j].tagID)');
+// 							console.log(true);
+// 							bool = true;
+// 						} 
+// 					}
+// 				}
+
+// 				for(var j=0; j<n_condition.length; j++){
+// 					if( n_condition[j].tmplKeyID == keys[i].id ){
+
+// 						bool = true;
+// 						if( tagIDs.indexOf(n_condition[j].tagID > -1 ) ){
+// 							bool = false;
+// 						} 
+// 					}
+// 				}
+// 				if( bool ) result.push(keys[i]);
+// 			}
+// 		}
+// 		console.log(result);
+// // ----------------------------------------------------
+// 		if(callback)
+// 			await callback(result);
+// 		return result;
+
+// 	} catch (e) {
+// 		console.log(e);
+// 		return 0;
+// 	}
+// }
  async function selectFlagTemplates (tagID, callback)  {
 	try {
 		var query = ""
@@ -2228,7 +2469,7 @@ module.exports.saveProjectDB = async (projID, pack, callback) => {
 		let query = "SELECT * FROM projectDB WHERE projectID = ?";
 		let projectDB = await myquery(query, [projID]);
 			console.log(17);
-		console.log(projectDB);
+			console.log(projectDB);
 			console.log(16);
 		// if()
 
@@ -2314,13 +2555,89 @@ module.exports.saveProjectDB = async (projID, pack, callback) => {
 
 			console.log(1);
 			}
-		}
+		}else{ // projectDB exist
+			let newflag = ( pack.db_type == 'localhost' ) ? 0 : 1;
+			let flag = projectDB[0].flag;
 			console.log(0);
 
-		result = null;
+			if( flag != newflag ){// new flag
+				let upd_query = "UPDATE projectDB SET flag = ? WHERE projectID = ?";
+				let result = await myquery(upd_query, [newflag, projID]);
+					console.log('update flag');
+					console.log(result);
+			}
+			console.log(-1);
+
+			if(flag){ // ssh host
+				console.log(-2);
+				// ...
+			}else{ // local db host 
+				console.log(-3);
+				let dbhID = projectDB[0].dbhID;
+				let dbh_query = "SELECT * FROM dbhost WHERE id = ?";
+				let dbh = await myquery(dbh_query, [dbhID]);
+				console.log(dbh);
+				console.log(-4);
+				let host = pack.db_adr,
+					port = pack.db_port,
+					user = pack.db_usr,
+					password = pack.db_pass,
+					name = pack.db_name;
+
+				console.log(-5);
+				if( dbh[0].host != host ){
+					let upd_query = "UPDATE dbhost SET host = ? WHERE id = ?";
+					let result = await myquery(upd_query, [host, dbhID]);
+					console.log('update host');
+					console.log(result);
+				}
+				console.log(-6);
+				if( dbh[0].port != port ){
+					if(port){ // some port
+						let upd_query = "UPDATE dbhost SET port = ? WHERE id = ?";
+						let result = await myquery(upd_query, [port, dbhID]);
+						console.log('update port');
+						console.log(result);
+					}else{ // no port ''
+						if(dbh[0].port){ // if there was some port, and now there is no port
+							let upd_query = "UPDATE dbhost SET port = ? WHERE id = ?";
+							let result = await myquery(upd_query, [null, dbhID]);
+							console.log('update port');
+							console.log(result);
+						}else{ // there was no port, so it will remain stay null
+							console.log('dbh[0].port');
+							console.log(dbh[0].port);
+						}
+					}
+				}
+				console.log(-7);
+				if( dbh[0].user != user ){
+					let upd_query = "UPDATE dbhost SET user = ? WHERE id = ?";
+					let result = await myquery(upd_query, [user, dbhID]);
+					console.log('update user');
+					console.log(result);
+				}
+				console.log(-8);
+				if( dbh[0].password != password ){
+					let upd_query = "UPDATE dbhost SET password = ? WHERE id = ?";
+					let result = await myquery(upd_query, [password, dbhID]);
+					console.log('update password');
+					console.log(result);
+				}
+				console.log(-9);
+				if( dbh[0].name != name ){
+					let upd_query = "UPDATE dbhost SET name = ? WHERE id = ?";
+					let result = await myquery(upd_query, [name, dbhID]);
+					console.log('update name');
+					console.log(result);
+				}
+				console.log(-10);
+			}
+		}
+
 		if(callback)
-			await callback(result);
-		return result;
+			await callback();
+		return ;
 
 	} catch (e) {
 		console.log(e);
@@ -2792,55 +3109,81 @@ module.exports.importJson = async function(json, callback){ // !
 	}
 };
 async function uniqItem(connection, item){
-	console.log(' - uniqItem');
-	let query 	= "SELECT * FROM original WHERE `video` = ?";
-	let result = await connection.query(query, [item.video] ); // !
-	console.log(result[0]);
-	console.log(' = uniqItem');
-	return result[0].length ? false : true;
+	try{
+		console.log(' - uniqItem');
+		let query 	= "SELECT * FROM original WHERE `video` = ?";
+		let result = await connection.query(query, [item.video] ); // !
+		console.log(result[0]);
+		console.log(' = uniqItem');
+		return result[0].length ? false : true;
+	}catch(e){
+		console.log(" { originalCreate ERROR } ")
+		console.log(e);
+	}
 }
 async function tagInsert(connection, tag){ // !
-	console.log(' - tagInsert');
-	let query 	= "INSERT INTO tag (`name`) VALUES (?)";
-	let result = await connection.query(query, [tag] ); // !
+	try{
+		console.log(' - tagInsert');
+		let query 	= "INSERT INTO tag (`name`) VALUES (?)";
+		let result = await connection.query(query, [tag] ); // !
 
-	console.log(' = tagInsert result f()');
-	console.log({result: result});
-	return result[0];
+		console.log(' = tagInsert result f()');
+		console.log({result: result});
+		return result[0];
+	}catch(e){
+		console.log(" { originalCreate ERROR } ")
+		console.log(e);
+	}
 }
 async function tagSearch(connection, tag){ // !
-	console.log(' - tagSearch');
-	let query = 'SELECT * FROM tag WHERE `name` = ?';
-	let [rows, fields] = await connection.query(query, [tag] ); // !
+	try{
+		console.log(' - tagSearch');
+		let query = 'SELECT * FROM tag WHERE `name` = ?';
+		let [rows, fields] = await connection.query(query, [tag] ); // !
 
-	console.log(' = tagSearch result f()');
-	console.log({rows: rows, fields: fields});
-	return {rows: rows, fields: fields};
+		console.log(' = tagSearch result f()');
+		console.log({rows: rows, fields: fields});
+		return {rows: rows, fields: fields};
+	}catch(e){
+		console.log(" { originalCreate ERROR } ")
+		console.log(e);
+	}
 }
 async function originalCreate(connection, item){ // !
-	console.log(' - originalCreate');
-	console.log(item);
+	try{
+		console.log(' - originalCreate');
+		console.log(item);
 
-	let query = 'INSERT INTO original (`title`,`link`,`video`,`description`) VALUES (?,?,?,?)';
-	let result = await connection.query(query, [ item.title, item.href, item.video, item.desc] ); // !
+		let query = 'INSERT INTO original (`title`,`link`,`video`,`description`) VALUES (?,?,?,?)';
+		let result = await connection.query(query, [ item.title, item.href, item.video, item.desc] ); // !
 
-	console.log(' = originalCreate result f()');
-	console.log(result);
-	return result[0];
+		console.log(' = originalCreate result f()');
+		console.log(result);
+		return result[0];
+	}catch(e){
+		console.log(" { originalCreate ERROR } ")
+		console.log(e);
+	}
 }
 async function originalRelation(connection, ids){
-	console.log(' - originalRelation');
+	try{
+		console.log(' - originalRelation');
 
-	let query = 'INSERT INTO relationTagOriginal (`tagID`,`originalID`) VALUES (?,?)';
-	await ids.tags.forEach( async (item, i , arr) => {
-		let [row] = await connection.query( query, [ ids.tags[i], ids.original] );
-	console.log(' = originalRelation result f()');
-	console.log(row);
-	});
+		let query = 'INSERT INTO relationTagOriginal (`tagID`,`originalID`) VALUES (?,?)';
+		await ids.tags.forEach( async (item, i , arr) => {
+			let [row] = await connection.query( query, [ ids.tags[i], ids.original] );
+		console.log(' = originalRelation result f()');
+		console.log(row);
+		});
+	}catch(e){
+		console.log(" { originalCreate ERROR } ")
+		console.log(e);
+	}
 }
 async function tagInit(connection, tag){
-	console.log(' - tagInit');
-	console.log(tag);
+	try{
+		console.log(' - tagInit');
+		console.log(tag);
 
 		// let id = -1;
 		let result = await tagSearch(connection, tag); // !
@@ -2854,48 +3197,62 @@ async function tagInit(connection, tag){
 			console.log(tmp);
 			return  tmp.insertId;
 		}
+	}catch(e){
+		console.log(" { originalCreate ERROR } ")
+		console.log(e);
+	}
 }
 async function tagsParse(connection, tags){
-	console.log(' - tagsParse');
-	console.log(tags);
-	
-	tags = arrayLowerCase(tags);
-	tags = arrayUniq(tags);
-	
-	let tagIds = [];
-	await Promise.all(tags.map( async (tag) => {  // !
-
-		var id = await tagInit(connection,tag);
-
-		console.log('tag id: '+id);
-
-		if( !tagIds.includes(id) )
-			await tagIds.push( id );
+	try{
+		console.log(' - tagsParse');
+		console.log(tags);
 		
-		console.log('tags id:');
-		console.log(tagIds);
-	}));
-	return tagIds;
+		tags = arrayLowerCase(tags);
+		tags = arrayUniq(tags);
+		
+		let tagIds = [];
+		await Promise.all(tags.map( async (tag) => {  // !
+
+			var id = await tagInit(connection,tag);
+
+			console.log('tag id: '+id);
+
+			if( !tagIds.includes(id) )
+				await tagIds.push( id );
+			
+			console.log('tags id:');
+			console.log(tagIds);
+		}));
+		return tagIds;
+	}catch(e){
+		console.log(" { originalCreate ERROR } ")
+		console.log(e);
+	}
 }
 async function magic(connection, item){
-	let ids = {};
-	let tags;
-	console.log(item.tags);
-	if( typeof item.tags == "string" )
-		tags = item.tags.split(/,/g);
-	else if( Array.isArray(item.tags) )
-		tags = item.tags;
-	else console.log("wrong type of tags");
+	try{
+		let ids = {};
+		let tags;
+		console.log(item.tags);
+		if( typeof item.tags == "string" )
+			tags = item.tags.split(/,/g);
+		else if( Array.isArray(item.tags) )
+			tags = item.tags;
+		else console.log("wrong type of tags");
 
-	if( item.href ) tags.push( item.href );
+		if( item.href ) tags.push( item.href );
 
-	ids.tags = await tagsParse(connection, tags);
+		ids.tags = await tagsParse(connection, tags);
 
-	original = await originalCreate(connection, item); // !
-	console.log( 'original id: ' + original.insertId );
-	ids.original = original.insertId;
+		original = await originalCreate(connection, item); // !
+		console.log( 'original id: ' + original.insertId );
+		ids.original = original.insertId;
 
-	return ids;
+		return ids;
+	}catch(e){
+		console.log(" { originalCreate ERROR } ")
+		console.log(e);
+	}
 }
 // function libraryKeyParse(e, lib){
 // 	var regexp = /\[\w*\]/ig;

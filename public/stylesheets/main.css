@@ -5,6 +5,10 @@ body{
 input{
     border-bottom-right-radius: 1px;
 }
+p.error-msg {
+    color: red;
+    margin: 5px;
+}
 p.input-line.txt-cent {
     margin: 20px 0 -15px 0;
 }

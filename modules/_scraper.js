@@ -9,7 +9,7 @@ function _reject(msg){
 }
 
 module.exports.getLink = async function(url) {
-    try{
+    // try{
 
         console.log(' -> start getLink Nightmare');
         if (!url) return;
@@ -18,7 +18,7 @@ module.exports.getLink = async function(url) {
         console.log('url');
         console.log(url);
         
-        return new Promise((resolve, reject)=>{
+        return await Promise.resolve(
             Nightmare({
                 'ignore-certificate-errors': true,
                 'node-integration': false,
@@ -40,9 +40,9 @@ module.exports.getLink = async function(url) {
             .on('crashed', function(event, url){
                 try{
                     console.log('[Nightmare] crashed');
-                    // return new Promise(function(resolve, reject) {
+                    return new Promise(function(resolve, reject) {
                         reject('crashed');
-                    // });
+                    });
                 } catch (e) {
                     console.log(e);
                     return 0;
@@ -51,9 +51,9 @@ module.exports.getLink = async function(url) {
             .on('did-fail-load', function(event){
                 try{
                     console.log('[Nightmare] did-fail-load');
-                    // return new Promise(function(resolve, reject) {
+                    return new Promise(function(resolve, reject) {
                         reject('did-fail-load');
-                    // });
+                    });
                 } catch (e) {
                     console.log(e);
                     return 0;
@@ -78,52 +78,44 @@ module.exports.getLink = async function(url) {
                 if (url.search(/pornhub\.com/i) != -1){
                     obj = document.querySelector('#player video source');
                     if(!obj)
-                        // return new Promise(function(resolve, reject) {
+                        return new Promise(function(resolve, reject) {
                             reject('broken link');
-                        // })
+                        })
                     link = obj.src;
                 }
                 else if (url.search(/xhamster\.com/i) != -1){
                     obj = document.querySelector('a.player-container__no-player.xplayer');
                     if(!obj)
-                        // return new Promise(function(resolve, reject) {
+                        return new Promise(function(resolve, reject) {
                             reject('broken link');
-                        // })
+                        })
                     link = obj.href;
                 }
 
                 if(!link) 
-                    // return new Promise(function(resolve, reject) {
+                    return new Promise(function(resolve, reject) {
                         reject('broken link');
-                    // })
+                    })
                 return link;
             }, url)
             .end()
     		.then(function(results) {
     		    console.log(" - donor video link - ");
     		    console.log(results);
-    		    // return new Promise(function(resolve, reject) {
+    		    return new Promise(function(resolve, reject) {
     		        resolve(results);
-    		    // })
+    		    })
     		})
             .catch(err => {
                 console.log(" { Nightmare REJECT } ");
                 console.error(err);
             })
-        });
-        // ;
-        // .then((r) => {
-    	   //  console.log(" = donor video link = ");
-        // 	console.log(r);
-        // 	video_link = r;
-        //     return r;
-        // });
+        )
 
-    } catch (e) {
-        console.log(e);
-        return 0;
-    }
-    // return video_link;
+    // } catch (e) {
+    //     console.log(e);
+    //     return 0;
+    // }
 }
 
 

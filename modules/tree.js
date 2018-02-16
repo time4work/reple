@@ -1,36 +1,44 @@
 ////////////////////////////////////////////////////////
-//////////////////TMPL Tree////////////////////////////
+////////////////// T M P L Tree ///////////////////////
 //////////////////////////////////////////////////////
 let Tree = class{
 
-    constructor(startkey, keys, lib){
+    constructor(start_key ,tmpl_pack, lib_pack){
         // if(startkey) this.start = startkey;
         // if(keys) this.keys = keys;
-        if(lib) this.lib = lib;
-        this._mappedKeyId = [];
-        
-    }
-    // setStart(string){
-    //     this.startkey = string;
-    // }
-    // setKeys(keys){
-    //     this.keys = keys;
-    // }
-    // setLib(lib){
-    //     this.lib = lib;
-    // }
-    // async createProcess(projectID, objects, time){
+        // if(lib_pack) this.lib_pack = lib_pack;
+        // this.tmpl_pack = tmpl_pack;
+        console.log('___________');
+        console.log(start_key);
+        console.log(tmpl_pack);
+        console.log(lib_pack);
+        console.log('___________');
 
-    // }
+        this.mappedKeyId = [];
+
+        this.start = start_key;
+        this.tmpl = this.parseTmplObj(tmpl_pack);
+        if(lib_pack) 
+            this.tmpl_lib = this.parseLibObj(lib_pack);
+    }
+
+    async createText(){
+        console.log(this.lib_pack);
+        let result = await this.templateParse(this.tmpl[this.start], this.tmpl);
+        if(this.tmpl_lib)
+            result = await this.libraryKeyParse(result, this.tmpl_lib);
+        return result;
+    }
     // ["test".toUpperCase()]() {
     //     alert("PASSED!");
     // }
 
-    static rand(items){
+    rand(items){
         return items[~~(Math.random() * items.length)];
     }
 
-    static parseTmplObj(json){
+    parseTmplObj(json){
+        console.log(json);
         var tmpl_arr= json.map((item)=>{
             var obj = {};
             obj[item['keyword']] = [];
@@ -50,7 +58,7 @@ let Tree = class{
         }
         return tmpl;
     }
-    static parseLibObj(json){
+    parseLibObj(json){
         var lib_arr= json.map((item)=>{
             var obj = {};
             obj[item['key']] = [];
@@ -73,21 +81,41 @@ let Tree = class{
         return lib;
     }
 
-    static templateParse(e, obj){
+    templateParse(e, obj){
         var regexp = /<\w*>/ig;
-        console.log('- e: '+e);
+        console.log('- tmpl: '+e);
+
+        if ( !e )
+            return null;
+
         if ( Array.isArray(e) ){
-            return templateParse( this.rand(e), obj);
+            if(e.length == 0)
+                return null;
+            else{
+                let promis = null;
+                do{
+                    let min = 0,
+                        max = e.length-1;
+                    var rand = min + Math.floor(Math.random() * (max + 1 - min));
+                    promis = this.templateParse( e[rand], obj);
+                    e.splice(rand,1);
+                    // promis = this.templateParse( this.rand(e), obj);
+                }while(!promis && e.length)
+
+                if(!promis) return null;
+                return promis;
+            }
         }
         else{
             if( /<\w*>/i.test(e) ){
                 var result = '';
                 var last_pos = 0;
+                let foo;
                 while ( foo = regexp.exec(e)) {
                     result += e.substring(last_pos,foo.index);
                     
                     var ind = foo[0].replace(/[<>]*/g,'');
-                    result += templateParse( obj[ind], obj);
+                    result += this.templateParse( obj[ind], obj);
                     last_pos = regexp.lastIndex;
                     // console.log('[ result ]: '+result);
                 }
@@ -98,21 +126,41 @@ let Tree = class{
             }
         }
     }
-    static libraryKeyParse(e, lib){
+    libraryKeyParse(e, lib){
         var regexp = /\[\w*\]/ig;
-        console.log('- e: '+e);
+        console.log('- lib: '+e);
+
         if ( Array.isArray(e) ){
-            return templateParse( this.rand(e), lib);
+            if(e.length == 0)
+                return null;
+            else{
+                let promis = null;
+                do{
+                    let min = 0,
+                        max = e.length-1;
+                    var rand = min + Math.floor(Math.random() * (max + 1 - min));
+                    promis = this.libraryKeyParse( e[rand], lib);
+                    e.splice(rand,1);
+                    // promis = this.templateParse( this.rand(e), obj);
+                }while(!promis && e.length)
+
+                if(!promis) return null;
+                return promis;
+            }
         }
+        // if ( Array.isArray(e) ){
+        //     return this.libraryKeyParse( this.rand(e), lib);
+        // }
         else{
             if( /\[\w*\]/i.test(e) ){
                 var result = '';
                 var last_pos = 0;
+                let foo;
                 while ( foo = regexp.exec(e)) {
                     result += e.substring(last_pos,foo.index);
                     
                     var ind = foo[0].replace(/[\[\]]*/g,'');
-                    result += templateParse( lib[ind], lib );
+                    result += this.libraryKeyParse( lib[ind], lib );
                     last_pos = regexp.lastIndex;
                     console.log('[ result ]: '+result);
                 }
