@@ -9,7 +9,7 @@ const logger 		= require('logops');
 const bodyParser 	= require('body-parser');
 const helpers 		= require('./helpers');
 const thumbManager 	= require('./thumb-maker');
-const cookieSession = require('cookie-session')
+const cookieSession = require('cookie-session');
 /////////////////////////////////////////////
 const TM = new thumbManager('./screens/');
 /////////////////////////////////////////////
