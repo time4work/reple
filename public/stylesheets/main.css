@@ -5,6 +5,9 @@ body{
 input{
     border-bottom-right-radius: 1px;
 }
+.jumbotron.text-center {
+    font-size: 60px;
+}
 p.error-msg {
     color: red;
     margin: 5px;
